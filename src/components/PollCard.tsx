@@ -28,7 +28,7 @@ export function PollCard({ poll, onVote, hasVoted = false }: PollCardProps) {
         <div className="flex justify-between items-start gap-4">
           <h3 className="text-xl font-semibold leading-tight">{poll.question}</h3>
           <Badge variant="secondary" className="shrink-0">
-            {totalVotes} votes
+            {totalVotes} 票
           </Badge>
         </div>
 
@@ -48,7 +48,7 @@ export function PollCard({ poll, onVote, hasVoted = false }: PollCardProps) {
                         <span className="font-medium">{option.text}</span>
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-muted-foreground">
-                            {option.vote_count} votes ({percentage}%)
+                            {option.vote_count} 票 ({percentage}%)
                           </span>
                           <div className="w-4 h-4 rounded-full border-2 border-primary/30 flex items-center justify-center">
                             <div className="w-2 h-2 rounded-full bg-primary/50"></div>
@@ -76,7 +76,7 @@ export function PollCard({ poll, onVote, hasVoted = false }: PollCardProps) {
                       <span className="font-medium">{option.text}</span>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-muted-foreground">
-                          {option.vote_count} votes
+                          {option.vote_count} 票
                         </span>
                         <Badge variant="outline">{percentage}%</Badge>
                       </div>
@@ -97,10 +97,10 @@ export function PollCard({ poll, onVote, hasVoted = false }: PollCardProps) {
 
 
         <div className="flex justify-between items-center text-sm text-muted-foreground pt-2 border-t border-poll-card-border">
-          <span>Created {formatDistanceToNow(new Date(poll.created_at), { addSuffix: true })}</span>
+          <span>建立於 {formatDistanceToNow(new Date(poll.created_at), { addSuffix: true })}</span>
           {hasVoted && (
             <Badge variant="outline" className="bg-success/20 text-success border-success/50">
-              Voted
+              已投票
             </Badge>
           )}
         </div>

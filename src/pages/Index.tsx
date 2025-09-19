@@ -44,14 +44,14 @@ const Index = () => {
       setShowCreateForm(false);
       // Real-time updates will handle the new poll automatically
       toast({
-        title: "Poll created!",
-        description: "Your poll is now live and ready for votes.",
+        title: "投票已建立！",
+        description: "您的投票現在已上線並準備接受投票。",
       });
     } catch (error) {
       console.error('Error creating poll:', error);
       toast({
-        title: "Error",
-        description: "Failed to create poll. Please try again.",
+        title: "錯誤",
+        description: "建立投票失敗，請重試。",
         variant: "destructive"
       });
     }
@@ -93,14 +93,14 @@ const Index = () => {
       setVotedPolls(prev => new Set([...prev, pollId]));
       // Real-time updates will handle the vote count changes automatically
       toast({
-        title: "Vote recorded!",
-        description: "Thank you for participating in the poll.",
+        title: "投票已記錄！",
+        description: "感謝您參與投票。",
       });
     } catch (error) {
       console.error('❌ Error voting:', error);
       toast({
-        title: "Error",
-        description: "Failed to record vote. Please try again.",
+        title: "錯誤",
+        description: "記錄投票失敗，請重試。",
         variant: "destructive"
       });
     }
@@ -115,10 +115,10 @@ const Index = () => {
             <Vote className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary via-purple-500 to-purple-600 bg-clip-text text-transparent">
-            Quick Polls
+            快速投票
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-4">
-            Create polls instantly and gather opinions from anyone. Simple, fast, and beautiful.
+            立即建立投票並收集任何人的意見。簡單、快速且美觀。
           </p>
           
           {/* Real-time connection status */}
@@ -126,17 +126,17 @@ const Index = () => {
             {connectionStatus === 'connected' ? (
               <>
                 <Wifi className="w-4 h-4 text-green-500" />
-                <span className="text-green-600 font-medium">Live Updates Active</span>
+                <span className="text-green-600 font-medium">即時更新已啟用</span>
               </>
             ) : connectionStatus === 'disconnected' ? (
               <>
                 <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-blue-600 font-medium">Auto-Refresh Every 2s</span>
+                <span className="text-blue-600 font-medium">每2秒自動更新</span>
               </>
             ) : (
               <>
                 <div className="w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-yellow-600 font-medium">Connecting...</span>
+                <span className="text-yellow-600 font-medium">連接中...</span>
               </>
             )}
           </div>
@@ -150,7 +150,7 @@ const Index = () => {
             className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white font-semibold px-8"
           >
             <PlusCircle className="w-5 h-5 mr-2" />
-            {showCreateForm ? 'Cancel' : 'Create New Poll'}
+            {showCreateForm ? '取消' : '建立新投票'}
           </Button>
           
         </div>
@@ -164,7 +164,7 @@ const Index = () => {
           {loading ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-              <p className="mt-4 text-muted-foreground">Loading polls...</p>
+              <p className="mt-4 text-muted-foreground">載入投票中...</p>
             </div>
           ) : (
             <PollList

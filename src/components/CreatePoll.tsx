@@ -55,31 +55,31 @@ export function CreatePoll({ onCreatePoll }: CreatePollProps) {
   return (
     <Card className="p-6 bg-poll-card border-poll-card-border">
       <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
-        Create New Poll
+        建立新投票
       </h2>
       
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="question" className="text-lg font-medium">
-            Poll Question
+            投票問題
           </Label>
           <Input
             id="question"
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
-            placeholder="What would you like to ask?"
+            placeholder="您想問什麼問題？"
             className="bg-poll-option border-poll-card-border focus:border-primary text-lg py-3"
           />
         </div>
 
         <div className="space-y-4">
-          <Label className="text-lg font-medium">Answer Options</Label>
+          <Label className="text-lg font-medium">答案選項</Label>
           {options.map((option, index) => (
             <div key={index} className="flex gap-2 items-center">
               <Input
                 value={option}
                 onChange={(e) => updateOption(index, e.target.value)}
-                placeholder={`Option ${index + 1}`}
+                placeholder={`選項 ${index + 1}`}
                 className="bg-poll-option border-poll-card-border focus:border-primary"
               />
               {options.length > 2 && (
@@ -104,7 +104,7 @@ export function CreatePoll({ onCreatePoll }: CreatePollProps) {
               className="w-full border-poll-card-border hover:bg-poll-option-hover border-dashed"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Add Option
+              新增選項
             </Button>
           )}
         </div>
@@ -114,7 +114,7 @@ export function CreatePoll({ onCreatePoll }: CreatePollProps) {
           disabled={!isValid}
           className="w-full bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white font-semibold py-3 text-lg"
         >
-          Create Poll
+          建立投票
         </Button>
       </form>
     </Card>
