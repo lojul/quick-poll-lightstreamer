@@ -21,8 +21,10 @@ export function PollCard({ poll, onVote, hasVoted = false }: PollCardProps) {
     }
   };
 
+  const totalVotes = poll.poll_options.reduce((sum, option) => sum + option.vote_count, 0);
+  
   const getPercentage = (votes: number) => {
-    return poll.totalVotes > 0 ? Math.round((votes / poll.totalVotes) * 100) : 0;
+    return totalVotes > 0 ? Math.round((votes / totalVotes) * 100) : 0;
   };
 
   return (
@@ -31,13 +33,13 @@ export function PollCard({ poll, onVote, hasVoted = false }: PollCardProps) {
         <div className="flex justify-between items-start gap-4">
           <h3 className="text-xl font-semibold leading-tight">{poll.question}</h3>
           <Badge variant="secondary" className="shrink-0">
-            {poll.totalVotes} votes
+            {totalVotes} votes
           </Badge>
         </div>
 
         <div className="space-y-3">
-          {poll.options.map((option) => {
-            const percentage = getPercentage(option.votes);
+          {poll.poll_options.map((option) => {
+            const percentage = getPercentage(option.vote_count);
             const isSelected = selectedOption === option.id;
             
             return (
@@ -70,7 +72,7 @@ export function PollCard({ poll, onVote, hasVoted = false }: PollCardProps) {
                       <span className="font-medium">{option.text}</span>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-muted-foreground">
-                          {option.votes} votes
+                          {option.vote_count} votes
                         </span>
                         <Badge variant="outline">{percentage}%</Badge>
                       </div>
@@ -93,7 +95,7 @@ export function PollCard({ poll, onVote, hasVoted = false }: PollCardProps) {
         )}
 
         <div className="flex justify-between items-center text-sm text-muted-foreground pt-2 border-t border-poll-card-border">
-          <span>Created {formatDistanceToNow(poll.createdAt, { addSuffix: true })}</span>
+          <span>Created {formatDistanceToNow(new Date(poll.created_at), { addSuffix: true })}</span>
           {hasVoted && (
             <Badge variant="outline" className="bg-success/20 text-success border-success/50">
               Voted

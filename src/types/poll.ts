@@ -1,15 +1,15 @@
 export interface PollOption {
   id: string;
   text: string;
-  votes: number;
+  vote_count: number;
+  poll_id: string;
 }
 
 export interface Poll {
   id: string;
   question: string;
-  options: PollOption[];
-  createdAt: Date;
-  totalVotes: number;
+  created_at: string;
+  poll_options: PollOption[];
 }
 
 export interface CreatePollData {
