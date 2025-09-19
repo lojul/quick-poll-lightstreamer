@@ -59,6 +59,8 @@ const Index = () => {
 
   const handleVote = async (pollId: string, optionId: string) => {
     try {
+      console.log('🗳️ Recording vote for poll:', pollId, 'option:', optionId);
+      
       // Record the vote
       const { error: voteError } = await supabase
         .from('votes')
@@ -68,6 +70,7 @@ const Index = () => {
         });
 
       if (voteError) throw voteError;
+      console.log('✅ Vote recorded in votes table');
 
       // Update vote count - manual increment
       const { data: option } = await supabase
@@ -76,10 +79,16 @@ const Index = () => {
         .eq('id', optionId)
         .single();
       
-      await supabase
+      const newVoteCount = (option?.vote_count || 0) + 1;
+      console.log('📊 Updating vote count from', option?.vote_count, 'to', newVoteCount);
+      
+      const { error: updateError } = await supabase
         .from('poll_options')
-        .update({ vote_count: (option?.vote_count || 0) + 1 })
+        .update({ vote_count: newVoteCount })
         .eq('id', optionId);
+
+      if (updateError) throw updateError;
+      console.log('✅ Vote count updated in poll_options table');
 
       setVotedPolls(prev => new Set([...prev, pollId]));
       // Real-time updates will handle the vote count changes automatically
@@ -88,7 +97,7 @@ const Index = () => {
         description: "Thank you for participating in the poll.",
       });
     } catch (error) {
-      console.error('Error voting:', error);
+      console.error('❌ Error voting:', error);
       toast({
         title: "Error",
         description: "Failed to record vote. Please try again.",
@@ -121,8 +130,8 @@ const Index = () => {
               </>
             ) : connectionStatus === 'disconnected' ? (
               <>
-                <WifiOff className="w-4 h-4 text-red-500" />
-                <span className="text-red-600 font-medium">Connection Lost</span>
+                <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-blue-600 font-medium">Auto-Refresh Every 2s</span>
               </>
             ) : (
               <>

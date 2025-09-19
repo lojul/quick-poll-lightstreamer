@@ -54,6 +54,8 @@ export const useRealtimePolls = () => {
   };
 
   useEffect(() => {
+    console.log('Setting up real-time subscriptions...');
+    
     // Load initial data
     loadPolls();
 
@@ -68,7 +70,7 @@ export const useRealtimePolls = () => {
           table: 'poll_options' 
         },
         (payload) => {
-          console.log('Vote count updated:', payload.new);
+          console.log('🔔 Real-time: Vote count updated:', payload);
           updatePollData(payload.new);
         }
       )
@@ -80,7 +82,7 @@ export const useRealtimePolls = () => {
           table: 'polls' 
         },
         (payload) => {
-          console.log('New poll created:', payload.new);
+          console.log('🔔 Real-time: New poll created:', payload);
           // Reload polls to get the new poll with its options
           loadPolls();
         }
@@ -93,25 +95,35 @@ export const useRealtimePolls = () => {
           table: 'poll_options' 
         },
         (payload) => {
-          console.log('New poll option created:', payload.new);
+          console.log('🔔 Real-time: New poll option created:', payload);
           // Reload polls to get the new poll options
           loadPolls();
         }
       )
       .subscribe((status) => {
-        console.log('Subscription status:', status);
+        console.log('📡 Real-time subscription status:', status);
         if (status === 'SUBSCRIBED') {
+          console.log('✅ Real-time connected successfully');
           setConnectionStatus('connected');
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.log('❌ Real-time connection failed:', status);
           setConnectionStatus('disconnected');
         } else {
+          console.log('⏳ Real-time connecting...', status);
           setConnectionStatus('connecting');
         }
       });
 
+    // Fallback: Polling every 2 seconds for updates
+    const pollingInterval = setInterval(() => {
+      console.log('🔄 Polling for updates...');
+      loadPolls();
+    }, 2000);
+
     // Cleanup subscription on unmount
     return () => {
-      console.log('Unsubscribing from real-time updates');
+      console.log('🔌 Unsubscribing from real-time updates');
+      clearInterval(pollingInterval);
       supabase.removeChannel(subscription);
     };
   }, []);
