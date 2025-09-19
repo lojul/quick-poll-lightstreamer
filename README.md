@@ -71,3 +71,33 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+## Deployment (Vercel)
+
+This project is built with Vite + React and is ready for Vercel.
+
+1) Set Environment Variables in Vercel Project Settings:
+
+Required env vars (build and runtime):
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
+2) Build & Output Settings:
+
+- Framework Preset: "Vite"
+- Build Command: `npm run build`
+- Output Directory: `dist`
+
+3) SPA Routing:
+
+No special config required; Vercel will serve `index.html` from `dist`.
+
+4) Local env:
+
+Create a `.env.local` with:
+
+```
+VITE_SUPABASE_URL=your-url
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```

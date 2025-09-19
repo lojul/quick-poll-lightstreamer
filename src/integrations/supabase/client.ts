@@ -2,11 +2,9 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = "https://qqtdghrbwgrzkhysxbia.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxdGRnaHJid2dyemtoeXN4YmlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyNTI4MTgsImV4cCI6MjA3MzgyODgxOH0.8IduJiIZE0db9My-nQ0be8U4rAM-reVVlFOJS8e6sFQ";
-
-// Import the supabase client like this:
-// import { supabase } from "@/integrations/supabase/client";
+// Use Vite environment variables (configure in Vercel Project Settings or .env.local)
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
