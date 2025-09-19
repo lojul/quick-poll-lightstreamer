@@ -25,7 +25,7 @@ export function PollList({ polls, onVote, votedPolls }: PollListProps) {
       <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
         Recent Polls
       </h2>
-      <div className="grid gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {polls.map((poll) => (
           <PollCard
             key={poll.id}
