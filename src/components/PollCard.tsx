@@ -1,6 +1,4 @@
-import { useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Poll } from '@/types/poll';
 import { formatDistanceToNow } from 'date-fns';
@@ -12,12 +10,9 @@ interface PollCardProps {
 }
 
 export function PollCard({ poll, onVote, hasVoted = false }: PollCardProps) {
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
-
-  const handleVote = () => {
-    if (selectedOption) {
-      onVote(poll.id, selectedOption);
-      setSelectedOption(null);
+  const handleOptionClick = (optionId: string) => {
+    if (!hasVoted) {
+      onVote(poll.id, optionId);
     }
   };
 
@@ -40,19 +35,14 @@ export function PollCard({ poll, onVote, hasVoted = false }: PollCardProps) {
         <div className="space-y-3">
           {poll.poll_options.map((option) => {
             const percentage = getPercentage(option.vote_count);
-            const isSelected = selectedOption === option.id;
             
             return (
               <div key={option.id} className="space-y-2">
                 {!hasVoted ? (
                   <div className="relative">
                     <button
-                      onClick={() => setSelectedOption(option.id)}
-                      className={`w-full p-4 rounded-lg border transition-all duration-200 text-left ${
-                        isSelected
-                          ? 'bg-poll-option-selected border-poll-option-selected text-white'
-                          : 'bg-poll-option border-poll-card-border hover:bg-poll-option-hover hover:border-primary/50'
-                      }`}
+                      onClick={() => handleOptionClick(option.id)}
+                      className="w-full p-4 rounded-lg border transition-all duration-200 text-left bg-poll-option border-poll-card-border hover:bg-poll-option-hover hover:border-primary/50 hover:shadow-md cursor-pointer"
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-medium">{option.text}</span>
@@ -60,11 +50,9 @@ export function PollCard({ poll, onVote, hasVoted = false }: PollCardProps) {
                           <span className="text-sm text-muted-foreground">
                             {option.vote_count} votes ({percentage}%)
                           </span>
-                          {isSelected && (
-                            <div className="w-4 h-4 rounded-full bg-white flex items-center justify-center">
-                              <div className="w-2 h-2 rounded-full bg-poll-option-selected"></div>
-                            </div>
-                          )}
+                          <div className="w-4 h-4 rounded-full border-2 border-primary/30 flex items-center justify-center">
+                            <div className="w-2 h-2 rounded-full bg-primary/50"></div>
+                          </div>
                         </div>
                       </div>
                     </button>
@@ -107,15 +95,6 @@ export function PollCard({ poll, onVote, hasVoted = false }: PollCardProps) {
           })}
         </div>
 
-        {!hasVoted && (
-          <Button
-            onClick={handleVote}
-            disabled={!selectedOption}
-            className="w-full bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white font-semibold"
-          >
-            Vote
-          </Button>
-        )}
 
         <div className="flex justify-between items-center text-sm text-muted-foreground pt-2 border-t border-poll-card-border">
           <span>Created {formatDistanceToNow(new Date(poll.created_at), { addSuffix: true })}</span>
