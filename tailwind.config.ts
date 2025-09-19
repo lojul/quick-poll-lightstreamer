@@ -47,6 +47,17 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        poll: {
+          card: "hsl(var(--poll-card))",
+          "card-border": "hsl(var(--poll-card-border))",
+          option: "hsl(var(--poll-option))",
+          "option-hover": "hsl(var(--poll-option-hover))",
+          "option-selected": "hsl(var(--poll-option-selected))",
+          "result-bg": "hsl(var(--poll-result-bg))",
+        },
+        success: "hsl(var(--success))",
+        warning: "hsl(var(--warning))",
+        info: "hsl(var(--info))",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
