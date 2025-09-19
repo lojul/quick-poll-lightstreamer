@@ -1,55 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { CreatePoll } from '@/components/CreatePoll';
 import { PollList } from '@/components/PollList';
 import { Button } from '@/components/ui/button';
 import { Poll, CreatePollData } from '@/types/poll';
-import { PlusCircle, Vote } from 'lucide-react';
+import { PlusCircle, Vote, Wifi, WifiOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useRealtimePolls } from '@/hooks/useRealtimePolls';
 import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
-  const [polls, setPolls] = useState<Poll[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [votedPolls, setVotedPolls] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  
+  // Use real-time polls hook
+  const { polls, loading, connectionStatus, loadPolls, addPoll } = useRealtimePolls();
 
-  // Load polls from Supabase
-  const loadPolls = async () => {
-    try {
-      const { data: pollsData, error: pollsError } = await supabase
-        .from('polls')
-        .select(`
-          id,
-          question,
-          created_at,
-          poll_options (
-            id,
-            text,
-            vote_count,
-            poll_id
-          )
-        `)
-        .order('created_at', { ascending: false });
-
-      if (pollsError) throw pollsError;
-
-      setPolls(pollsData || []);
-    } catch (error) {
-      console.error('Error loading polls:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load polls. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadPolls();
-  }, []);
 
 
   const createPoll = async (pollData: CreatePollData) => {
@@ -76,7 +42,7 @@ const Index = () => {
       if (optionsError) throw optionsError;
 
       setShowCreateForm(false);
-      loadPolls(); // Refresh polls
+      // Real-time updates will handle the new poll automatically
       toast({
         title: "Poll created!",
         description: "Your poll is now live and ready for votes.",
@@ -116,7 +82,7 @@ const Index = () => {
         .eq('id', optionId);
 
       setVotedPolls(prev => new Set([...prev, pollId]));
-      loadPolls(); // Refresh polls to show updated vote counts
+      // Real-time updates will handle the vote count changes automatically
       toast({
         title: "Vote recorded!",
         description: "Thank you for participating in the poll.",
@@ -142,9 +108,29 @@ const Index = () => {
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary via-purple-500 to-purple-600 bg-clip-text text-transparent">
             Quick Polls
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-4">
             Create polls instantly and gather opinions from anyone. Simple, fast, and beautiful.
           </p>
+          
+          {/* Real-time connection status */}
+          <div className="flex items-center justify-center gap-2 text-sm">
+            {connectionStatus === 'connected' ? (
+              <>
+                <Wifi className="w-4 h-4 text-green-500" />
+                <span className="text-green-600 font-medium">Live Updates Active</span>
+              </>
+            ) : connectionStatus === 'disconnected' ? (
+              <>
+                <WifiOff className="w-4 h-4 text-red-500" />
+                <span className="text-red-600 font-medium">Connection Lost</span>
+              </>
+            ) : (
+              <>
+                <div className="w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-yellow-600 font-medium">Connecting...</span>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Action Buttons */}
