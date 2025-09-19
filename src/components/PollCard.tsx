@@ -45,23 +45,39 @@ export function PollCard({ poll, onVote, hasVoted = false }: PollCardProps) {
             return (
               <div key={option.id} className="space-y-2">
                 {!hasVoted ? (
-                  <button
-                    onClick={() => setSelectedOption(option.id)}
-                    className={`w-full p-4 rounded-lg border transition-all duration-200 text-left ${
-                      isSelected
-                        ? 'bg-poll-option-selected border-poll-option-selected text-white'
-                        : 'bg-poll-option border-poll-card-border hover:bg-poll-option-hover hover:border-primary/50'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">{option.text}</span>
-                      {isSelected && (
-                        <div className="w-4 h-4 rounded-full bg-white flex items-center justify-center">
-                          <div className="w-2 h-2 rounded-full bg-poll-option-selected"></div>
+                  <div className="relative">
+                    <button
+                      onClick={() => setSelectedOption(option.id)}
+                      className={`w-full p-4 rounded-lg border transition-all duration-200 text-left ${
+                        isSelected
+                          ? 'bg-poll-option-selected border-poll-option-selected text-white'
+                          : 'bg-poll-option border-poll-card-border hover:bg-poll-option-hover hover:border-primary/50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">{option.text}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">
+                            {option.vote_count} votes ({percentage}%)
+                          </span>
+                          {isSelected && (
+                            <div className="w-4 h-4 rounded-full bg-white flex items-center justify-center">
+                              <div className="w-2 h-2 rounded-full bg-poll-option-selected"></div>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  </button>
+                      </div>
+                    </button>
+                    {/* Progress bar for visual representation */}
+                    {totalVotes > 0 && (
+                      <div className="mt-2 h-1 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-primary to-purple-500 transition-all duration-500"
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <div className="relative p-4 rounded-lg bg-poll-result-bg border border-poll-card-border overflow-hidden">
                     <div
@@ -76,6 +92,13 @@ export function PollCard({ poll, onVote, hasVoted = false }: PollCardProps) {
                         </span>
                         <Badge variant="outline">{percentage}%</Badge>
                       </div>
+                    </div>
+                    {/* Progress bar for voted state */}
+                    <div className="mt-2 h-1 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-primary to-purple-500 transition-all duration-500"
+                        style={{ width: `${percentage}%` }}
+                      />
                     </div>
                   </div>
                 )}

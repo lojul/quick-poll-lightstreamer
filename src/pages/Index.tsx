@@ -6,7 +6,6 @@ import { Poll, CreatePollData } from '@/types/poll';
 import { PlusCircle, Vote } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { seedPolls } from '@/utils/seedPolls';
 
 const Index = () => {
   const [polls, setPolls] = useState<Poll[]>([]);
@@ -52,23 +51,6 @@ const Index = () => {
     loadPolls();
   }, []);
 
-  // Helper function to seed polls (for demo purposes)
-  const handleSeedPolls = async () => {
-    const success = await seedPolls();
-    if (success) {
-      toast({
-        title: "Polls seeded!",
-        description: "21 demo polls have been added to the database.",
-      });
-      loadPolls(); // Refresh the polls list
-    } else {
-      toast({
-        title: "Error",
-        description: "Failed to seed polls.",
-        variant: "destructive"
-      });
-    }
-  };
 
   const createPoll = async (pollData: CreatePollData) => {
     try {
@@ -176,17 +158,6 @@ const Index = () => {
             {showCreateForm ? 'Cancel' : 'Create New Poll'}
           </Button>
           
-          {polls.length === 0 && !loading && (
-            <div className="mt-4">
-              <Button
-                onClick={handleSeedPolls}
-                variant="outline"
-                size="sm"
-              >
-                Add 21 Demo Polls
-              </Button>
-            </div>
-          )}
         </div>
 
         {/* Content */}
