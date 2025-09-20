@@ -124,8 +124,10 @@ const Index = () => {
             立即建立投票並收集任何人的意見。簡單、快速且美觀。
           </p>
           
-          {/* Real-time connection status */}
-          <RealtimeIndicator status={connectionStatus} lastUpdate={lastUpdate} />
+          {/* Real-time connection status - Centered */}
+          <div className="flex justify-center">
+            <RealtimeIndicator status={connectionStatus} lastUpdate={lastUpdate} />
+          </div>
         </div>
 
         {/* Action Buttons */}
