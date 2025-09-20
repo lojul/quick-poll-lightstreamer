@@ -78,6 +78,8 @@ export const useRealtimePolls = () => {
         (payload) => {
           console.log('🔔 Real-time: Vote count updated:', payload);
           updatePollData(payload.new);
+          // If we're receiving real-time events, we're definitely connected
+          setConnectionStatus('connected');
         }
       )
       .on(
@@ -91,6 +93,8 @@ export const useRealtimePolls = () => {
           console.log('🔔 Real-time: New poll created:', payload);
           // Reload polls to get the new poll with its options
           loadPolls();
+          // If we're receiving real-time events, we're definitely connected
+          setConnectionStatus('connected');
         }
       )
       .on(
@@ -104,6 +108,8 @@ export const useRealtimePolls = () => {
           console.log('🔔 Real-time: New poll option created:', payload);
           // Reload polls to get the new poll options
           loadPolls();
+          // If we're receiving real-time events, we're definitely connected
+          setConnectionStatus('connected');
         }
       )
       .subscribe((status, err) => {
@@ -124,6 +130,18 @@ export const useRealtimePolls = () => {
           setConnectionStatus('connecting');
         }
       });
+
+    // Additional check: If we receive real-time events, we're connected
+    // This helps catch cases where the status callback doesn't fire properly
+    const checkConnectionStatus = () => {
+      if (subscription.state === 'joined') {
+        console.log('✅ Real-time connection verified via state check');
+        setConnectionStatus('connected');
+      }
+    };
+
+    // Check connection status after a short delay
+    setTimeout(checkConnectionStatus, 1000);
 
     // Fallback: Polling every 2 seconds for updates
     const pollingInterval = setInterval(() => {
