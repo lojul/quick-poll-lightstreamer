@@ -62,7 +62,12 @@ export const useRealtimePolls = () => {
 
     // Set up real-time subscription for poll_options table changes
     const subscription = supabase
-      .channel('poll-updates')
+      .channel('poll-updates', {
+        config: {
+          broadcast: { self: true },
+          presence: { key: 'user' }
+        }
+      })
       .on(
         'postgres_changes',
         { 
@@ -101,14 +106,19 @@ export const useRealtimePolls = () => {
           loadPolls();
         }
       )
-      .subscribe((status) => {
-        console.log('📡 Real-time subscription status:', status);
+      .subscribe((status, err) => {
+        console.log('📡 Real-time subscription status:', status, err);
         if (status === 'SUBSCRIBED') {
           console.log('✅ Real-time connected successfully');
           setConnectionStatus('connected');
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.log('❌ Real-time connection failed:', status);
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          console.log('❌ Real-time connection failed:', status, err);
           setConnectionStatus('disconnected');
+          // Retry connection after 3 seconds
+          setTimeout(() => {
+            console.log('🔄 Retrying real-time connection...');
+            setConnectionStatus('connecting');
+          }, 3000);
         } else {
           console.log('⏳ Real-time connecting...', status);
           setConnectionStatus('connecting');
