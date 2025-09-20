@@ -6,6 +6,16 @@ export const useRealtimePolls = () => {
   const [polls, setPolls] = useState<Poll[]>([]);
   const [loading, setLoading] = useState(true);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'connecting'>('connecting');
+  const [hasConnected, setHasConnected] = useState(false);
+
+  // Stable status update function - only sets connected once
+  const setConnectedStatus = () => {
+    if (!hasConnected) {
+      console.log('✅ Setting status to connected for the first time');
+      setConnectionStatus('connected');
+      setHasConnected(true);
+    }
+  };
 
   // Load initial polls data
   const loadPolls = async () => {
@@ -28,8 +38,8 @@ export const useRealtimePolls = () => {
       if (pollsError) throw pollsError;
       setPolls(pollsData || []);
       // If we can load polls successfully, we're connected
-      console.log('✅ Polls loaded successfully - setting status to connected');
-      setConnectionStatus('connected');
+      console.log('✅ Polls loaded successfully');
+      setConnectedStatus();
     } catch (error) {
       console.error('Error loading polls:', error);
       setConnectionStatus('disconnected');
@@ -42,7 +52,7 @@ export const useRealtimePolls = () => {
   const updatePollData = (updatedOption: any) => {
     console.log('🔄 Updating poll data with:', updatedOption);
     // If we're updating poll data, we're definitely connected
-    setConnectionStatus('connected');
+    setConnectedStatus();
     setPolls(prevPolls => 
       prevPolls.map(poll => ({
         ...poll,
@@ -78,7 +88,7 @@ export const useRealtimePolls = () => {
         } else {
           console.log('✅ Supabase connection test successful');
           // If we can query the database, we're connected
-          setConnectionStatus('connected');
+          setConnectedStatus();
         }
       } catch (err) {
         console.error('❌ Supabase connection error:', err);
@@ -91,9 +101,9 @@ export const useRealtimePolls = () => {
     // Set a timeout to assume connected if we haven't received any status updates
     // This handles cases where the subscription callback doesn't fire properly
     const connectionTimeout = setTimeout(() => {
-      if (connectionStatus === 'connecting') {
+      if (connectionStatus === 'connecting' && !hasConnected) {
         console.log('🔄 Connection timeout - assuming connected since real-time events work');
-        setConnectionStatus('connected');
+        setConnectedStatus();
       }
     }, 3000);
 
@@ -116,7 +126,7 @@ export const useRealtimePolls = () => {
           console.log('🔔 Real-time: Vote count updated:', payload);
           updatePollData(payload.new);
           // If we're receiving real-time events, we're definitely connected
-          setConnectionStatus('connected');
+          setConnectedStatus();
         }
       )
       .on(
@@ -131,7 +141,7 @@ export const useRealtimePolls = () => {
           // Reload polls to get the new poll with its options
           loadPolls();
           // If we're receiving real-time events, we're definitely connected
-          setConnectionStatus('connected');
+          setConnectedStatus();
         }
       )
       .on(
@@ -146,14 +156,14 @@ export const useRealtimePolls = () => {
           // Reload polls to get the new poll options
           loadPolls();
           // If we're receiving real-time events, we're definitely connected
-          setConnectionStatus('connected');
+          setConnectedStatus();
         }
       )
       .subscribe((status, err) => {
         console.log('📡 Real-time subscription status:', status, err);
         if (status === 'SUBSCRIBED') {
           console.log('✅ Real-time connected successfully');
-          setConnectionStatus('connected');
+          setConnectedStatus();
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
           console.log('❌ Real-time connection failed:', status, err);
           setConnectionStatus('disconnected');
