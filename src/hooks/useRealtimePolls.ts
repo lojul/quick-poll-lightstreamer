@@ -27,8 +27,12 @@ export const useRealtimePolls = () => {
 
       if (pollsError) throw pollsError;
       setPolls(pollsData || []);
+      // If we can load polls successfully, we're connected
+      console.log('✅ Polls loaded successfully - setting status to connected');
+      setConnectionStatus('connected');
     } catch (error) {
       console.error('Error loading polls:', error);
+      setConnectionStatus('disconnected');
     } finally {
       setLoading(false);
     }
@@ -58,9 +62,31 @@ export const useRealtimePolls = () => {
 
   useEffect(() => {
     console.log('Setting up real-time subscriptions...');
+    console.log('🔧 Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+    console.log('🔧 Supabase Key exists:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
     
     // Load initial data
     loadPolls();
+
+    // Test Supabase connection first
+    const testConnection = async () => {
+      try {
+        const { data, error } = await supabase.from('polls').select('count').limit(1);
+        if (error) {
+          console.error('❌ Supabase connection test failed:', error);
+          setConnectionStatus('disconnected');
+        } else {
+          console.log('✅ Supabase connection test successful');
+          // If we can query the database, we're connected
+          setConnectionStatus('connected');
+        }
+      } catch (err) {
+        console.error('❌ Supabase connection error:', err);
+        setConnectionStatus('disconnected');
+      }
+    };
+
+    testConnection();
 
     // Set a timeout to assume connected if we haven't received any status updates
     // This handles cases where the subscription callback doesn't fire properly
@@ -69,7 +95,7 @@ export const useRealtimePolls = () => {
         console.log('🔄 Connection timeout - assuming connected since real-time events work');
         setConnectionStatus('connected');
       }
-    }, 5000);
+    }, 3000);
 
     // Set up real-time subscription for poll_options table changes
     const subscription = supabase
