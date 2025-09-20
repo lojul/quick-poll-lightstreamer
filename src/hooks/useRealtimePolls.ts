@@ -36,6 +36,7 @@ export const useRealtimePolls = () => {
 
   // Update poll data when vote counts change
   const updatePollData = (updatedOption: any) => {
+    console.log('🔄 Updating poll data with:', updatedOption);
     setPolls(prevPolls => 
       prevPolls.map(poll => ({
         ...poll,

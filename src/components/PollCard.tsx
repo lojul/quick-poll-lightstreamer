@@ -1,7 +1,11 @@
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Poll } from '@/types/poll';
+import { PollChart } from './PollChart';
 import { formatDistanceToNow } from 'date-fns';
+import { BarChart3, List } from 'lucide-react';
+import { useState } from 'react';
 
 interface PollCardProps {
   poll: Poll;
@@ -10,6 +14,8 @@ interface PollCardProps {
 }
 
 export function PollCard({ poll, onVote, hasVoted = false }: PollCardProps) {
+  const [viewMode, setViewMode] = useState<'list' | 'chart'>('list');
+  
   const handleOptionClick = (optionId: string) => {
     if (!hasVoted) {
       onVote(poll.id, optionId);
@@ -27,73 +33,102 @@ export function PollCard({ poll, onVote, hasVoted = false }: PollCardProps) {
       <div className="space-y-4">
         <div className="flex justify-between items-start gap-4">
           <h3 className="text-xl font-semibold leading-tight">{poll.question}</h3>
-          <Badge variant="secondary" className="shrink-0">
-            {totalVotes} 票
-          </Badge>
+          <div className="flex items-center gap-2 shrink-0">
+            <Badge variant="secondary">
+              {totalVotes} 票
+            </Badge>
+            {totalVotes > 0 && (
+              <div className="flex gap-1">
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                >
+                  <List className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'chart' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('chart')}
+                >
+                  <BarChart3 className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="space-y-3">
-          {poll.poll_options.map((option) => {
-            const percentage = getPercentage(option.vote_count);
-            
-            return (
-              <div key={option.id} className="space-y-2">
-                {!hasVoted ? (
-                  <div className="relative">
-                    <button
-                      onClick={() => handleOptionClick(option.id)}
-                      className="w-full p-4 rounded-lg border transition-all duration-200 text-left bg-poll-option border-poll-card-border hover:bg-poll-option-hover hover:border-primary/50 hover:shadow-md cursor-pointer"
-                    >
-                      <div className="flex items-center justify-between">
+        {viewMode === 'chart' && totalVotes > 0 ? (
+          <div className="space-y-4">
+            <PollChart options={poll.poll_options} />
+            <div className="text-sm text-muted-foreground text-center">
+              總票數: {totalVotes}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {poll.poll_options.map((option) => {
+              const percentage = getPercentage(option.vote_count);
+              
+              return (
+                <div key={option.id} className="space-y-2">
+                  {!hasVoted ? (
+                    <div className="relative">
+                      <button
+                        onClick={() => handleOptionClick(option.id)}
+                        className="w-full p-4 rounded-lg border transition-all duration-200 text-left bg-poll-option border-poll-card-border hover:bg-poll-option-hover hover:border-primary/50 hover:shadow-md cursor-pointer"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">{option.text}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground">
+                              {option.vote_count} 票 ({percentage}%)
+                            </span>
+                            <div className="w-4 h-4 rounded-full border-2 border-primary/30 flex items-center justify-center">
+                              <div className="w-2 h-2 rounded-full bg-primary/50"></div>
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                      {/* Progress bar for visual representation */}
+                      {totalVotes > 0 && (
+                        <div className="mt-2 h-1 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-primary to-purple-500 transition-all duration-500"
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="relative p-4 rounded-lg bg-poll-result-bg border border-poll-card-border overflow-hidden">
+                      <div
+                        className="absolute inset-0 bg-gradient-to-r from-primary/20 to-transparent transition-all duration-500"
+                        style={{ width: `${percentage}%` }}
+                      />
+                      <div className="relative flex items-center justify-between">
                         <span className="font-medium">{option.text}</span>
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-muted-foreground">
-                            {option.vote_count} 票 ({percentage}%)
+                            {option.vote_count} 票
                           </span>
-                          <div className="w-4 h-4 rounded-full border-2 border-primary/30 flex items-center justify-center">
-                            <div className="w-2 h-2 rounded-full bg-primary/50"></div>
-                          </div>
+                          <Badge variant="outline">{percentage}%</Badge>
                         </div>
                       </div>
-                    </button>
-                    {/* Progress bar for visual representation */}
-                    {totalVotes > 0 && (
+                      {/* Progress bar for voted state */}
                       <div className="mt-2 h-1 bg-gray-200 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-gradient-to-r from-primary to-purple-500 transition-all duration-500"
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="relative p-4 rounded-lg bg-poll-result-bg border border-poll-card-border overflow-hidden">
-                    <div
-                      className="absolute inset-0 bg-gradient-to-r from-primary/20 to-transparent transition-all duration-500"
-                      style={{ width: `${percentage}%` }}
-                    />
-                    <div className="relative flex items-center justify-between">
-                      <span className="font-medium">{option.text}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">
-                          {option.vote_count} 票
-                        </span>
-                        <Badge variant="outline">{percentage}%</Badge>
-                      </div>
                     </div>
-                    {/* Progress bar for voted state */}
-                    <div className="mt-2 h-1 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-primary to-purple-500 transition-all duration-500"
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
 
         <div className="flex justify-between items-center text-sm text-muted-foreground pt-2 border-t border-poll-card-border">

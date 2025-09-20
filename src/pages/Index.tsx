@@ -3,14 +3,16 @@ import { CreatePoll } from '@/components/CreatePoll';
 import { PollList } from '@/components/PollList';
 import { Button } from '@/components/ui/button';
 import { Poll, CreatePollData } from '@/types/poll';
-import { PlusCircle, Vote, Wifi, WifiOff } from 'lucide-react';
+import { PlusCircle, Vote } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRealtimePolls } from '@/hooks/useRealtimePolls';
+import { RealtimeIndicator } from '@/components/RealtimeIndicator';
 import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [votedPolls, setVotedPolls] = useState<Set<string>>(new Set());
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const { toast } = useToast();
   
   // Use real-time polls hook
@@ -91,6 +93,7 @@ const Index = () => {
       console.log('✅ Vote count updated in poll_options table');
 
       setVotedPolls(prev => new Set([...prev, pollId]));
+      setLastUpdate(new Date());
       // Real-time updates will handle the vote count changes automatically
       toast({
         title: "投票已記錄！",
@@ -122,24 +125,7 @@ const Index = () => {
           </p>
           
           {/* Real-time connection status */}
-          <div className="flex items-center justify-center gap-2 text-sm">
-            {connectionStatus === 'connected' ? (
-              <>
-                <Wifi className="w-4 h-4 text-green-500" />
-                <span className="text-green-600 font-medium">即時更新已啟用</span>
-              </>
-            ) : connectionStatus === 'disconnected' ? (
-              <>
-                <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-blue-600 font-medium">每2秒自動更新</span>
-              </>
-            ) : (
-              <>
-                <div className="w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-yellow-600 font-medium">連接中...</span>
-              </>
-            )}
-          </div>
+          <RealtimeIndicator status={connectionStatus} lastUpdate={lastUpdate} />
         </div>
 
         {/* Action Buttons */}
