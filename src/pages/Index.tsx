@@ -16,7 +16,7 @@ const Index = () => {
   const { toast } = useToast();
   
   // Use real-time polls hook
-  const { polls, loading, connectionStatus, loadPolls, addPoll } = useRealtimePolls();
+  const { polls, loading, connectionStatus, totalVotes, loadPolls, addPoll } = useRealtimePolls();
 
 
 
@@ -123,6 +123,25 @@ const Index = () => {
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-4">
             立即建立投票並收集任何人的意見。簡單、快速且美觀。
           </p>
+          
+          {/* Stats display */}
+          <div className="flex flex-wrap justify-center gap-4 mb-4">
+            {/* Total polls count */}
+            <div className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
+              <Vote className="w-4 h-4 mr-2 text-primary" />
+              <span className="text-sm font-medium text-primary">
+                總共 {polls.length} 個投票
+              </span>
+            </div>
+            
+            {/* Total votes count */}
+            <div className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-green-500/10 border border-green-500/20">
+              <Vote className="w-4 h-4 mr-2 text-green-600" />
+              <span className="text-sm font-medium text-green-600">
+                總共 {totalVotes} 票
+              </span>
+            </div>
+          </div>
           
           {/* Real-time connection status - Centered */}
           <div className="flex justify-center">

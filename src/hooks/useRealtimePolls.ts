@@ -7,6 +7,7 @@ export const useRealtimePolls = () => {
   const [loading, setLoading] = useState(true);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'connecting'>('connecting');
   const [hasConnected, setHasConnected] = useState(false);
+  const [totalVotes, setTotalVotes] = useState(0);
 
   // Stable status update function - only sets connected once
   const setConnectedStatus = () => {
@@ -15,6 +16,15 @@ export const useRealtimePolls = () => {
       setConnectionStatus('connected');
       setHasConnected(true);
     }
+  };
+
+  // Calculate total votes from all polls
+  const calculateTotalVotes = (pollsData: Poll[]) => {
+    return pollsData.reduce((total, poll) => {
+      return total + poll.poll_options.reduce((pollTotal, option) => {
+        return pollTotal + (option.vote_count || 0);
+      }, 0);
+    }, 0);
   };
 
   // Load initial polls data
@@ -36,7 +46,9 @@ export const useRealtimePolls = () => {
         .order('created_at', { ascending: false });
 
       if (pollsError) throw pollsError;
-      setPolls(pollsData || []);
+      const pollsArray = pollsData || [];
+      setPolls(pollsArray);
+      setTotalVotes(calculateTotalVotes(pollsArray));
       // If we can load polls successfully, we're connected
       console.log('✅ Polls loaded successfully');
       setConnectedStatus();
@@ -53,21 +65,28 @@ export const useRealtimePolls = () => {
     console.log('🔄 Updating poll data with:', updatedOption);
     // If we're updating poll data, we're definitely connected
     setConnectedStatus();
-    setPolls(prevPolls => 
-      prevPolls.map(poll => ({
+    setPolls(prevPolls => {
+      const updatedPolls = prevPolls.map(poll => ({
         ...poll,
         poll_options: poll.poll_options.map(option => 
           option.id === updatedOption.id 
             ? { ...option, vote_count: updatedOption.vote_count }
             : option
         )
-      }))
-    );
+      }));
+      // Recalculate total votes after updating
+      setTotalVotes(calculateTotalVotes(updatedPolls));
+      return updatedPolls;
+    });
   };
 
   // Add new poll when created
   const addPoll = (newPoll: Poll) => {
-    setPolls(prevPolls => [newPoll, ...prevPolls]);
+    setPolls(prevPolls => {
+      const updatedPolls = [newPoll, ...prevPolls];
+      setTotalVotes(calculateTotalVotes(updatedPolls));
+      return updatedPolls;
+    });
   };
 
   useEffect(() => {
@@ -218,6 +237,7 @@ export const useRealtimePolls = () => {
     polls,
     loading,
     connectionStatus,
+    totalVotes,
     loadPolls,
     addPoll
   };
