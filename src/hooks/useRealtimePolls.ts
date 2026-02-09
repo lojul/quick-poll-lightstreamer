@@ -1,35 +1,41 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Poll } from '@/types/poll';
+import { Poll, PollOption } from '@/types/poll';
+
+type ConnectionStatus = 'connected' | 'disconnected' | 'connecting';
 
 export const useRealtimePolls = () => {
   const [polls, setPolls] = useState<Poll[]>([]);
   const [loading, setLoading] = useState(true);
-  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'connecting'>('connecting');
-  const [hasConnected, setHasConnected] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting');
   const [totalVotes, setTotalVotes] = useState(0);
 
-  // Stable status update function - only sets connected once
-  const setConnectedStatus = () => {
-    if (!hasConnected) {
-      console.log('✅ Setting status to connected for the first time');
-      setConnectionStatus('connected');
-      setHasConnected(true);
-    }
-  };
+  // Use refs to track state without causing re-renders or stale closures
+  const hasConnectedRef = useRef(false);
+  const pollsRef = useRef<Poll[]>([]);
 
   // Calculate total votes from all polls
-  const calculateTotalVotes = (pollsData: Poll[]) => {
+  const calculateTotalVotes = useCallback((pollsData: Poll[]) => {
     return pollsData.reduce((total, poll) => {
       return total + poll.poll_options.reduce((pollTotal, option) => {
         return pollTotal + (option.vote_count || 0);
       }, 0);
     }, 0);
-  };
+  }, []);
+
+  // Stable status update function
+  const setConnectedStatus = useCallback(() => {
+    if (!hasConnectedRef.current) {
+      console.log('✅ Setting status to connected');
+      hasConnectedRef.current = true;
+    }
+    setConnectionStatus('connected');
+  }, []);
 
   // Load initial polls data
-  const loadPolls = async () => {
+  const loadPolls = useCallback(async () => {
     try {
+      console.log('📡 Loading polls...');
       const { data: pollsData, error: pollsError } = await supabase
         .from('polls')
         .select(`
@@ -46,192 +52,116 @@ export const useRealtimePolls = () => {
         .order('created_at', { ascending: false });
 
       if (pollsError) throw pollsError;
+
       const pollsArray = pollsData || [];
+      pollsRef.current = pollsArray;
       setPolls(pollsArray);
       setTotalVotes(calculateTotalVotes(pollsArray));
-      // If we can load polls successfully, we're connected
-      console.log('✅ Polls loaded successfully');
+      console.log('✅ Loaded', pollsArray.length, 'polls');
       setConnectedStatus();
     } catch (error) {
-      console.error('Error loading polls:', error);
+      console.error('❌ Error loading polls:', error);
       setConnectionStatus('disconnected');
     } finally {
       setLoading(false);
     }
-  };
+  }, [calculateTotalVotes, setConnectedStatus]);
 
   // Update poll data when vote counts change
-  const updatePollData = (updatedOption: any) => {
+  const updatePollData = useCallback((updatedOption: PollOption) => {
     console.log('🔄 Updating poll data with:', updatedOption);
-    // If we're updating poll data, we're definitely connected
     setConnectedStatus();
     setPolls(prevPolls => {
       const updatedPolls = prevPolls.map(poll => ({
         ...poll,
-        poll_options: poll.poll_options.map(option => 
-          option.id === updatedOption.id 
+        poll_options: poll.poll_options.map(option =>
+          option.id === updatedOption.id
             ? { ...option, vote_count: updatedOption.vote_count }
             : option
         )
       }));
-      // Recalculate total votes after updating
+      pollsRef.current = updatedPolls;
       setTotalVotes(calculateTotalVotes(updatedPolls));
       return updatedPolls;
     });
-  };
+  }, [calculateTotalVotes, setConnectedStatus]);
 
   // Add new poll when created
-  const addPoll = (newPoll: Poll) => {
+  const addPoll = useCallback((newPoll: Poll) => {
     setPolls(prevPolls => {
       const updatedPolls = [newPoll, ...prevPolls];
+      pollsRef.current = updatedPolls;
       setTotalVotes(calculateTotalVotes(updatedPolls));
       return updatedPolls;
     });
-  };
+  }, [calculateTotalVotes]);
 
   useEffect(() => {
-    console.log('Setting up real-time subscriptions...');
+    console.log('🔧 Setting up real-time subscriptions...');
     console.log('🔧 Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
     console.log('🔧 Supabase Key exists:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
-    
+
+    // Validate environment variables
+    if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+      console.error('❌ Missing Supabase environment variables');
+      setConnectionStatus('disconnected');
+      setLoading(false);
+      return;
+    }
+
     // Load initial data
     loadPolls();
 
-    // Test Supabase connection first
-    const testConnection = async () => {
-      try {
-        const { data, error } = await supabase.from('polls').select('count').limit(1);
-        if (error) {
-          console.error('❌ Supabase connection test failed:', error);
-          setConnectionStatus('disconnected');
-        } else {
-          console.log('✅ Supabase connection test successful');
-          // If we can query the database, we're connected
-          setConnectedStatus();
-        }
-      } catch (err) {
-        console.error('❌ Supabase connection error:', err);
-        setConnectionStatus('disconnected');
-      }
-    };
-
-    testConnection();
-
-    // Set a timeout to assume connected if we haven't received any status updates
-    // This handles cases where the subscription callback doesn't fire properly
-    const connectionTimeout = setTimeout(() => {
-      if (connectionStatus === 'connecting' && !hasConnected) {
-        console.log('🔄 Connection timeout - assuming connected since real-time events work');
-        setConnectedStatus();
-      }
-    }, 3000);
-
-    // Set up real-time subscription for poll_options table changes
-    const subscription = supabase
-      .channel('poll-updates', {
-        config: {
-          broadcast: { self: true },
-          presence: { key: 'user' }
-        }
-      })
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('poll-updates')
       .on(
         'postgres_changes',
-        { 
-          event: 'UPDATE', 
-          schema: 'public', 
-          table: 'poll_options' 
-        },
+        { event: 'UPDATE', schema: 'public', table: 'poll_options' },
         (payload) => {
           console.log('🔔 Real-time: Vote count updated:', payload);
-          updatePollData(payload.new);
-          // If we're receiving real-time events, we're definitely connected
-          setConnectedStatus();
+          updatePollData(payload.new as PollOption);
         }
       )
       .on(
         'postgres_changes',
-        { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'polls' 
-        },
+        { event: 'INSERT', schema: 'public', table: 'polls' },
         (payload) => {
           console.log('🔔 Real-time: New poll created:', payload);
-          // Reload polls to get the new poll with its options
           loadPolls();
-          // If we're receiving real-time events, we're definitely connected
-          setConnectedStatus();
         }
       )
       .on(
         'postgres_changes',
-        { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'poll_options' 
-        },
+        { event: 'INSERT', schema: 'public', table: 'poll_options' },
         (payload) => {
           console.log('🔔 Real-time: New poll option created:', payload);
-          // Reload polls to get the new poll options
           loadPolls();
-          // If we're receiving real-time events, we're definitely connected
-          setConnectedStatus();
         }
       )
       .subscribe((status, err) => {
-        console.log('📡 Real-time subscription status:', status, err);
+        console.log('📡 Subscription status:', status, err || '');
         if (status === 'SUBSCRIBED') {
-          console.log('✅ Real-time connected successfully');
+          console.log('✅ Real-time connected');
           setConnectedStatus();
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-          console.log('❌ Real-time connection failed:', status, err);
-          setConnectionStatus('disconnected');
-          // Retry connection after 3 seconds
-          setTimeout(() => {
-            console.log('🔄 Retrying real-time connection...');
-            setConnectionStatus('connecting');
-          }, 3000);
-        } else {
-          console.log('⏳ Real-time connecting...', status);
-          setConnectionStatus('connecting');
+          console.log('❌ Real-time connection issue:', status);
+          // Don't set disconnected immediately - polling will keep working
         }
       });
 
-    // Additional check: If we receive real-time events, we're connected
-    // This helps catch cases where the status callback doesn't fire properly
-    const checkConnectionStatus = () => {
-      if (subscription.state === 'joined') {
-        console.log('✅ Real-time connection verified via state check');
-        setConnectionStatus('connected');
-      } else {
-        console.log('⚠️ Subscription state:', subscription.state);
-        // If we're still connecting after 3 seconds, assume connected if no errors
-        setTimeout(() => {
-          if (connectionStatus === 'connecting') {
-            console.log('🔄 Assuming connected after timeout - real-time events are working');
-            setConnectionStatus('connected');
-          }
-        }, 3000);
-      }
-    };
-
-    // Check connection status after a short delay
-    setTimeout(checkConnectionStatus, 1000);
-
-    // Fallback: Polling every 2 seconds for updates
+    // Fallback polling every 5 seconds (less aggressive)
     const pollingInterval = setInterval(() => {
-      console.log('🔄 Polling for updates...');
       loadPolls();
-    }, 2000);
+    }, 5000);
 
-    // Cleanup subscription on unmount
+    // Cleanup
     return () => {
-      console.log('🔌 Unsubscribing from real-time updates');
+      console.log('🔌 Cleaning up subscriptions');
       clearInterval(pollingInterval);
-      clearTimeout(connectionTimeout);
-      supabase.removeChannel(subscription);
+      supabase.removeChannel(channel);
     };
-  }, []);
+  }, [loadPolls, updatePollData, setConnectedStatus]);
 
   return {
     polls,
