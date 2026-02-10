@@ -9,7 +9,7 @@ export interface Poll {
   id: string;
   question: string;
   created_at: string;
-  deadline: string;
+  deadline?: string; // optional until migration is run
   poll_options: PollOption[];
 }
 

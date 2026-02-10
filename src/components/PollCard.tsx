@@ -17,8 +17,10 @@ interface PollCardProps {
 export function PollCard({ poll, onVote, hasVoted = false }: PollCardProps) {
   const [viewMode, setViewMode] = useState<'list' | 'chart'>('list');
 
-  const deadlineDate = new Date(poll.deadline);
-  const isExpired = isPast(deadlineDate);
+  // Handle case where deadline doesn't exist yet (before migration)
+  const hasDeadline = !!poll.deadline;
+  const deadlineDate = hasDeadline ? new Date(poll.deadline) : null;
+  const isExpired = deadlineDate ? isPast(deadlineDate) : false;
   const canVote = !hasVoted && !isExpired;
 
   const handleOptionClick = (optionId: string) => {
@@ -40,22 +42,24 @@ export function PollCard({ poll, onVote, hasVoted = false }: PollCardProps) {
           <div className="space-y-1">
             <h3 className="text-xl font-semibold leading-tight">{poll.question}</h3>
             {/* Deadline indicator */}
-            <div className={`flex items-center gap-1 text-sm ${isExpired ? 'text-red-500' : 'text-muted-foreground'}`}>
-              {isExpired ? (
-                <>
-                  <AlertCircle className="w-3.5 h-3.5" />
-                  <span>已截止</span>
-                </>
-              ) : (
-                <>
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>剩餘 {formatDistanceToNow(deadlineDate, { locale: zhTW })}</span>
-                </>
-              )}
-            </div>
+            {hasDeadline && (
+              <div className={`flex items-center gap-1 text-sm ${isExpired ? 'text-red-500' : 'text-muted-foreground'}`}>
+                {isExpired ? (
+                  <>
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    <span>已截止</span>
+                  </>
+                ) : (
+                  <>
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>剩餘 {formatDistanceToNow(deadlineDate!, { locale: zhTW })}</span>
+                  </>
+                )}
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {isExpired && (
+            {hasDeadline && isExpired && (
               <Badge variant="destructive">已截止</Badge>
             )}
             <Badge variant="secondary">
