@@ -163,40 +163,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-      {/* Auth Header - Fixed position */}
-      <div className="fixed top-4 right-4 z-50 flex items-center gap-3">
-        {isAuthenticated ? (
-          <>
-            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 border-2 border-green-500/30 shadow-lg">
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <User className="w-4 h-4 text-green-600" />
-              <span className="text-sm font-medium text-green-700 max-w-[150px] truncate">
-                {user?.email}
-              </span>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSignOut}
-              className="border-2 hover:bg-red-50 hover:border-red-300 hover:text-red-600"
-            >
-              <LogOut className="w-4 h-4 mr-1" />
-              登出
-            </Button>
-          </>
-        ) : (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowAuthModal(true)}
-            className="border-2 shadow-lg hover:bg-primary/5"
-          >
-            <LogIn className="w-4 h-4 mr-1" />
-            登入
-          </Button>
-        )}
-      </div>
-
       {/* Auth Modal */}
       <AuthModal
         open={showAuthModal}
@@ -246,14 +212,35 @@ const Index = () => {
         {/* Action Buttons */}
         <div className="text-center mb-12 space-y-4">
           {isAuthenticated ? (
-            <Button
-              onClick={() => setShowCreateForm(!showCreateForm)}
-              size="lg"
-              className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white font-semibold px-8"
-            >
-              <PlusCircle className="w-5 h-5 mr-2" />
-              {showCreateForm ? '取消' : '建立新投票'}
-            </Button>
+            <>
+              {/* User info */}
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 border border-green-500/30">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  <User className="w-4 h-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-700">
+                    {user?.email}
+                  </span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSignOut}
+                  className="text-muted-foreground hover:text-red-600"
+                >
+                  <LogOut className="w-4 h-4 mr-1" />
+                  登出
+                </Button>
+              </div>
+              <Button
+                onClick={() => setShowCreateForm(!showCreateForm)}
+                size="lg"
+                className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white font-semibold px-8"
+              >
+                <PlusCircle className="w-5 h-5 mr-2" />
+                {showCreateForm ? '取消' : '建立新投票'}
+              </Button>
+            </>
           ) : (
             <Button
               onClick={() => setShowAuthModal(true)}

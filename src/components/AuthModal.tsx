@@ -10,8 +10,8 @@ import { Loader2 } from 'lucide-react';
 interface AuthModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSignUp: (email: string, password: string) => Promise<{ error: Error | null }>;
-  onSignIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  onSignUp: (email: string, password: string) => Promise<{ data: { user: unknown; session: unknown } | null; error: Error | null }>;
+  onSignIn: (email: string, password: string) => Promise<{ data: unknown; error: Error | null }>;
 }
 
 export function AuthModal({ open, onOpenChange, onSignUp, onSignIn }: AuthModalProps) {
@@ -66,11 +66,19 @@ export function AuthModal({ open, onOpenChange, onSignUp, onSignIn }: AuthModalP
     }
 
     setLoading(true);
-    const { error } = await onSignUp(email, password);
+    const { data, error } = await onSignUp(email, password);
     setLoading(false);
 
     if (error) {
       toast({ title: '註冊失敗', description: error.message, variant: 'destructive' });
+    } else if (data?.user && !data?.session) {
+      // Email confirmation required
+      toast({
+        title: '請確認電子郵件',
+        description: '我們已發送確認連結到您的信箱，請點擊連結完成註冊。',
+      });
+      resetForm();
+      onOpenChange(false);
     } else {
       toast({ title: '註冊成功', description: '您現在可以建立投票了！' });
       resetForm();
