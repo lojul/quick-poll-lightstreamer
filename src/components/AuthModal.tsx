@@ -45,6 +45,8 @@ export function AuthModal({ open, onOpenChange, onSignUp, onSignIn }: AuthModalP
       toast({ title: '登入成功', description: '歡迎回來！' });
       resetForm();
       onOpenChange(false);
+      // Scroll to top to show latest polls
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -83,6 +85,8 @@ export function AuthModal({ open, onOpenChange, onSignUp, onSignIn }: AuthModalP
       toast({ title: '註冊成功', description: '您現在可以建立投票了！' });
       resetForm();
       onOpenChange(false);
+      // Scroll to top to show latest polls
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
