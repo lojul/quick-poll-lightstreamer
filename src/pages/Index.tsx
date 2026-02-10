@@ -1,22 +1,64 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CreatePoll } from '@/components/CreatePoll';
 import { PollList } from '@/components/PollList';
 import { Button } from '@/components/ui/button';
-import { Poll, CreatePollData } from '@/types/poll';
-import { PlusCircle, Vote } from 'lucide-react';
+import { CreatePollData } from '@/types/poll';
+import { PlusCircle, Vote, LogIn, LogOut, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRealtimePolls } from '@/hooks/useRealtimePolls';
 import { RealtimeIndicator } from '@/components/RealtimeIndicator';
+import { AuthModal } from '@/components/AuthModal';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+
+const VOTED_POLLS_KEY = 'quick-polls-voted';
+
+// Load voted polls from localStorage
+const loadVotedPolls = (): Set<string> => {
+  try {
+    const stored = localStorage.getItem(VOTED_POLLS_KEY);
+    return stored ? new Set(JSON.parse(stored)) : new Set();
+  } catch {
+    return new Set();
+  }
+};
+
+// Save voted polls to localStorage
+const saveVotedPolls = (polls: Set<string>) => {
+  try {
+    localStorage.setItem(VOTED_POLLS_KEY, JSON.stringify([...polls]));
+  } catch {
+    // Ignore storage errors
+  }
+};
 
 const Index = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [votedPolls, setVotedPolls] = useState<Set<string>>(new Set());
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [votedPolls, setVotedPolls] = useState<Set<string>>(() => loadVotedPolls());
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+
+  // Auth hook
+  const { user, isAuthenticated, signUp, signIn, signOut } = useAuth();
+
+  // Save voted polls whenever they change
+  useEffect(() => {
+    saveVotedPolls(votedPolls);
+  }, [votedPolls]);
   const { toast } = useToast();
-  
+
   // Use real-time polls hook
-  const { polls, loading, connectionStatus, totalVotes, loadPolls, addPoll } = useRealtimePolls();
+  const { polls, loading, connectionStatus, totalVotes } = useRealtimePolls();
+
+  const handleSignOut = async () => {
+    const { error } = await signOut();
+    if (error) {
+      toast({ title: '登出失敗', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: '已登出', description: '下次見！' });
+      setShowCreateForm(false);
+    }
+  };
 
 
 
@@ -60,9 +102,19 @@ const Index = () => {
   };
 
   const handleVote = async (pollId: string, optionId: string) => {
+    // Check if already voted
+    if (votedPolls.has(pollId)) {
+      toast({
+        title: "已經投過票了",
+        description: "每個投票只能投一次。",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       console.log('🗳️ Recording vote for poll:', pollId, 'option:', optionId);
-      
+
       // Record the vote
       const { error: voteError } = await supabase
         .from('votes')
@@ -111,6 +163,48 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+      {/* Auth Header - Fixed position */}
+      <div className="fixed top-4 right-4 z-50 flex items-center gap-3">
+        {isAuthenticated ? (
+          <>
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 border-2 border-green-500/30 shadow-lg">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <User className="w-4 h-4 text-green-600" />
+              <span className="text-sm font-medium text-green-700 max-w-[150px] truncate">
+                {user?.email}
+              </span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSignOut}
+              className="border-2 hover:bg-red-50 hover:border-red-300 hover:text-red-600"
+            >
+              <LogOut className="w-4 h-4 mr-1" />
+              登出
+            </Button>
+          </>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAuthModal(true)}
+            className="border-2 shadow-lg hover:bg-primary/5"
+          >
+            <LogIn className="w-4 h-4 mr-1" />
+            登入
+          </Button>
+        )}
+      </div>
+
+      {/* Auth Modal */}
+      <AuthModal
+        open={showAuthModal}
+        onOpenChange={setShowAuthModal}
+        onSignUp={signUp}
+        onSignIn={signIn}
+      />
+
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
         <div className="text-center mb-12">
@@ -151,20 +245,31 @@ const Index = () => {
 
         {/* Action Buttons */}
         <div className="text-center mb-12 space-y-4">
-          <Button
-            onClick={() => setShowCreateForm(!showCreateForm)}
-            size="lg"
-            className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white font-semibold px-8"
-          >
-            <PlusCircle className="w-5 h-5 mr-2" />
-            {showCreateForm ? '取消' : '建立新投票'}
-          </Button>
-          
+          {isAuthenticated ? (
+            <Button
+              onClick={() => setShowCreateForm(!showCreateForm)}
+              size="lg"
+              className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white font-semibold px-8"
+            >
+              <PlusCircle className="w-5 h-5 mr-2" />
+              {showCreateForm ? '取消' : '建立新投票'}
+            </Button>
+          ) : (
+            <Button
+              onClick={() => setShowAuthModal(true)}
+              size="lg"
+              variant="outline"
+              className="font-semibold px-8"
+            >
+              <LogIn className="w-5 h-5 mr-2" />
+              登入以建立投票
+            </Button>
+          )}
         </div>
 
         {/* Content */}
         <div className="space-y-12">
-          {showCreateForm && (
+          {showCreateForm && isAuthenticated && (
             <CreatePoll onCreatePoll={createPoll} />
           )}
           
