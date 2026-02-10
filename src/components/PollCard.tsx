@@ -3,8 +3,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Poll } from '@/types/poll';
 import { PollChart } from './PollChart';
-import { formatDistanceToNow } from 'date-fns';
-import { BarChart3, List } from 'lucide-react';
+import { formatDistanceToNow, isPast } from 'date-fns';
+import { zhTW } from 'date-fns/locale';
+import { BarChart3, List, Clock, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
 
 interface PollCardProps {
@@ -15,9 +16,13 @@ interface PollCardProps {
 
 export function PollCard({ poll, onVote, hasVoted = false }: PollCardProps) {
   const [viewMode, setViewMode] = useState<'list' | 'chart'>('list');
-  
+
+  const deadlineDate = new Date(poll.deadline);
+  const isExpired = isPast(deadlineDate);
+  const canVote = !hasVoted && !isExpired;
+
   const handleOptionClick = (optionId: string) => {
-    if (!hasVoted) {
+    if (canVote) {
       onVote(poll.id, optionId);
     }
   };
@@ -32,8 +37,27 @@ export function PollCard({ poll, onVote, hasVoted = false }: PollCardProps) {
     <Card className="p-6 bg-poll-card border-poll-card-border hover:border-primary/30 transition-all duration-300">
       <div className="space-y-4">
         <div className="flex justify-between items-start gap-4">
-          <h3 className="text-xl font-semibold leading-tight">{poll.question}</h3>
+          <div className="space-y-1">
+            <h3 className="text-xl font-semibold leading-tight">{poll.question}</h3>
+            {/* Deadline indicator */}
+            <div className={`flex items-center gap-1 text-sm ${isExpired ? 'text-red-500' : 'text-muted-foreground'}`}>
+              {isExpired ? (
+                <>
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  <span>已截止</span>
+                </>
+              ) : (
+                <>
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>剩餘 {formatDistanceToNow(deadlineDate, { locale: zhTW })}</span>
+                </>
+              )}
+            </div>
+          </div>
           <div className="flex items-center gap-2 shrink-0">
+            {isExpired && (
+              <Badge variant="destructive">已截止</Badge>
+            )}
             <Badge variant="secondary">
               {totalVotes} 票
             </Badge>
@@ -69,10 +93,10 @@ export function PollCard({ poll, onVote, hasVoted = false }: PollCardProps) {
           <div className="space-y-3">
             {poll.poll_options.map((option) => {
               const percentage = getPercentage(option.vote_count);
-              
+
               return (
                 <div key={option.id} className="space-y-2">
-                  {!hasVoted ? (
+                  {canVote ? (
                     <div className="relative">
                       <button
                         onClick={() => handleOptionClick(option.id)}

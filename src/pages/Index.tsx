@@ -64,10 +64,13 @@ const Index = () => {
 
   const createPoll = async (pollData: CreatePollData) => {
     try {
-      // Create poll
+      // Create poll with deadline
       const { data: poll, error: pollError } = await supabase
         .from('polls')
-        .insert({ question: pollData.question })
+        .insert({
+          question: pollData.question,
+          deadline: pollData.deadline?.toISOString()
+        })
         .select()
         .single();
 
