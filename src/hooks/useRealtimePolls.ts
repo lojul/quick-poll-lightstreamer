@@ -99,10 +99,10 @@ export const useRealtimePolls = () => {
   useEffect(() => {
     console.log('🔧 Setting up real-time subscriptions...');
     console.log('🔧 Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
-    console.log('🔧 Supabase Key exists:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
+    console.log('🔧 Supabase Key exists:', !!import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
 
     // Validate environment variables
-    if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+    if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY) {
       console.error('❌ Missing Supabase environment variables');
       setConnectionStatus('disconnected');
       setLoading(false);
