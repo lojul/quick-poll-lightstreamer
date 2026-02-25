@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<adapters_conf id="POLL_ADAPTER">
+
+    <!-- Metadata Adapter using built-in LiteralBasedProvider -->
+    <metadata_provider>
+        <adapter_class>com.lightstreamer.adapters.metadata.LiteralBasedProvider</adapter_class>
+
+        <!-- Allow all items -->
+        <param name="item_family_1">option_.*</param>
+        <param name="modes_for_item_family_1">MERGE</param>
+    </metadata_provider>
+
+    <!-- Data Adapter - Robust Proxy for Remote Adapter -->
+    <data_provider name="VoteAdapter">
+        <adapter_class>ROBUST_PROXY_FOR_REMOTE_ADAPTER</adapter_class>
+        <classloader>log-enabled</classloader>
+
+        <!-- Single port for communication with Node.js adapter -->
+        <param name="request_reply_port">6661</param>
+
+        <!-- Timeout for request/reply operations (in milliseconds) -->
+        <param name="timeout">36000000</param>
+
+        <!-- Recovery: wait 10 seconds before trying to reconnect -->
+        <param name="connection_recovery_timeout_millis">10000</param>
+
+        <!-- Wait indefinitely for initial connection -->
+        <param name="first_connection_timeout_millis">-1</param>
+    </data_provider>
+
+</adapters_conf>

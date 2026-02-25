@@ -1,0 +1,14 @@
+{
+  "name": "poll-adapter",
+  "version": "1.0.0",
+  "description": "Lightstreamer data adapter for real-time poll vote streaming",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "lightstreamer-adapter": "^1.7.0",
+    "@supabase/supabase-js": "^2.57.4"
+  }
+}

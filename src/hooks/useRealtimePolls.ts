@@ -4,6 +4,31 @@ import { Poll, PollOption } from '@/types/poll';
 
 type ConnectionStatus = 'connected' | 'disconnected' | 'connecting';
 
+/**
+ * Extract all option IDs from polls array
+ */
+export function getAllOptionIds(polls: Poll[]): string[] {
+  return polls.flatMap(poll => poll.poll_options.map(option => option.id));
+}
+
+/**
+ * Merge vote updates from Lightstreamer into polls state
+ */
+export function mergeVoteUpdates(polls: Poll[], voteUpdates: Map<string, number>): Poll[] {
+  if (voteUpdates.size === 0) return polls;
+
+  return polls.map(poll => ({
+    ...poll,
+    poll_options: poll.poll_options.map(option => {
+      const updatedCount = voteUpdates.get(option.id);
+      if (updatedCount !== undefined) {
+        return { ...option, vote_count: updatedCount };
+      }
+      return option;
+    })
+  }));
+}
+
 export const useRealtimePolls = () => {
   const [polls, setPolls] = useState<Poll[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,7 +51,7 @@ export const useRealtimePolls = () => {
   // Stable status update function
   const setConnectedStatus = useCallback(() => {
     if (!hasConnectedRef.current) {
-      console.log('✅ Setting status to connected');
+      console.log('[Supabase] Connected');
       hasConnectedRef.current = true;
     }
     setConnectionStatus('connected');
@@ -35,7 +60,7 @@ export const useRealtimePolls = () => {
   // Load initial polls data
   const loadPolls = useCallback(async () => {
     try {
-      console.log('📡 Loading polls...');
+      console.log('[Supabase] Loading polls...');
       const { data: pollsData, error: pollsError } = await supabase
         .from('polls')
         .select(`
@@ -57,26 +82,24 @@ export const useRealtimePolls = () => {
       pollsRef.current = pollsArray;
       setPolls(pollsArray);
       setTotalVotes(calculateTotalVotes(pollsArray));
-      console.log('✅ Loaded', pollsArray.length, 'polls');
+      console.log('[Supabase] Loaded', pollsArray.length, 'polls');
       setConnectedStatus();
     } catch (error) {
-      console.error('❌ Error loading polls:', error);
+      console.error('[Supabase] Error loading polls:', error);
       setConnectionStatus('disconnected');
     } finally {
       setLoading(false);
     }
   }, [calculateTotalVotes, setConnectedStatus]);
 
-  // Update poll data when vote counts change
-  const updatePollData = useCallback((updatedOption: PollOption) => {
-    console.log('🔄 Updating poll data with:', updatedOption);
-    setConnectedStatus();
+  // Update vote count for a specific option (for local optimistic updates)
+  const updateOptionVoteCount = useCallback((optionId: string, voteCount: number) => {
     setPolls(prevPolls => {
       const updatedPolls = prevPolls.map(poll => ({
         ...poll,
         poll_options: poll.poll_options.map(option =>
-          option.id === updatedOption.id
-            ? { ...option, vote_count: updatedOption.vote_count }
+          option.id === optionId
+            ? { ...option, vote_count: voteCount }
             : option
         )
       }));
@@ -84,7 +107,7 @@ export const useRealtimePolls = () => {
       setTotalVotes(calculateTotalVotes(updatedPolls));
       return updatedPolls;
     });
-  }, [calculateTotalVotes, setConnectedStatus]);
+  }, [calculateTotalVotes]);
 
   // Add new poll when created
   const addPoll = useCallback((newPoll: Poll) => {
@@ -97,13 +120,11 @@ export const useRealtimePolls = () => {
   }, [calculateTotalVotes]);
 
   useEffect(() => {
-    console.log('🔧 Setting up real-time subscriptions...');
-    console.log('🔧 Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
-    console.log('🔧 Supabase Key exists:', !!import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
+    console.log('[Supabase] Setting up real-time subscriptions...');
 
     // Validate environment variables
     if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY) {
-      console.error('❌ Missing Supabase environment variables');
+      console.error('[Supabase] Missing environment variables');
       setConnectionStatus('disconnected');
       setLoading(false);
       return;
@@ -112,22 +133,15 @@ export const useRealtimePolls = () => {
     // Load initial data
     loadPolls();
 
-    // Set up real-time subscription
+    // Set up real-time subscription for poll CRUD only
+    // Vote count updates are handled by Lightstreamer when enabled
     const channel = supabase
       .channel('poll-updates')
       .on(
         'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'poll_options' },
-        (payload) => {
-          console.log('🔔 Real-time: Vote count updated:', payload);
-          updatePollData(payload.new as PollOption);
-        }
-      )
-      .on(
-        'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'polls' },
         (payload) => {
-          console.log('🔔 Real-time: New poll created:', payload);
+          console.log('[Supabase] New poll created:', payload);
           loadPolls();
         }
       )
@@ -135,33 +149,44 @@ export const useRealtimePolls = () => {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'poll_options' },
         (payload) => {
-          console.log('🔔 Real-time: New poll option created:', payload);
+          console.log('[Supabase] New poll option created:', payload);
           loadPolls();
         }
       )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'polls' },
+        (payload) => {
+          console.log('[Supabase] Poll deleted:', payload);
+          loadPolls();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'poll_options' },
+        (payload) => {
+          // Fallback: Still listen for vote updates via Supabase when Lightstreamer is disabled
+          console.log('[Supabase] Vote count updated:', payload);
+          const updatedOption = payload.new as PollOption;
+          updateOptionVoteCount(updatedOption.id, updatedOption.vote_count);
+        }
+      )
       .subscribe((status, err) => {
-        console.log('📡 Subscription status:', status, err || '');
+        console.log('[Supabase] Subscription status:', status, err || '');
         if (status === 'SUBSCRIBED') {
-          console.log('✅ Real-time connected');
+          console.log('[Supabase] Real-time connected');
           setConnectedStatus();
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-          console.log('❌ Real-time connection issue:', status);
-          // Don't set disconnected immediately - polling will keep working
+          console.log('[Supabase] Real-time connection issue:', status);
         }
       });
 
-    // Fallback polling every 5 seconds (less aggressive)
-    const pollingInterval = setInterval(() => {
-      loadPolls();
-    }, 5000);
-
     // Cleanup
     return () => {
-      console.log('🔌 Cleaning up subscriptions');
-      clearInterval(pollingInterval);
+      console.log('[Supabase] Cleaning up subscriptions');
       supabase.removeChannel(channel);
     };
-  }, [loadPolls, updatePollData, setConnectedStatus]);
+  }, [loadPolls, updateOptionVoteCount, setConnectedStatus]);
 
   return {
     polls,
@@ -169,6 +194,7 @@ export const useRealtimePolls = () => {
     connectionStatus,
     totalVotes,
     loadPolls,
-    addPoll
+    addPoll,
+    updateOptionVoteCount
   };
 };

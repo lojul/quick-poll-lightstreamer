@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { CreatePoll } from '@/components/CreatePoll';
 import { PollList } from '@/components/PollList';
 import { Button } from '@/components/ui/button';
 import { CreatePollData } from '@/types/poll';
 import { PlusCircle, Vote, LogIn, LogOut, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useRealtimePolls } from '@/hooks/useRealtimePolls';
+import { useRealtimePolls, getAllOptionIds, mergeVoteUpdates } from '@/hooks/useRealtimePolls';
+import { useLightstreamerVotes } from '@/hooks/useLightstreamerVotes';
 import { RealtimeIndicator } from '@/components/RealtimeIndicator';
 import { AuthModal } from '@/components/AuthModal';
 import { useAuth } from '@/hooks/useAuth';
@@ -47,8 +48,41 @@ const Index = () => {
   }, [votedPolls]);
   const { toast } = useToast();
 
-  // Use real-time polls hook
-  const { polls, loading, connectionStatus, totalVotes } = useRealtimePolls();
+  // Use real-time polls hook (Supabase for CRUD)
+  const { polls: basePolls, loading, connectionStatus: supabaseStatus, totalVotes } = useRealtimePolls();
+
+  // Use Lightstreamer for real-time vote streaming
+  const {
+    voteUpdates,
+    connectionStatus: lightstreamerStatus,
+    isEnabled: lightstreamerEnabled,
+    setOptionIds
+  } = useLightstreamerVotes();
+
+  // Update Lightstreamer subscription when polls change
+  useEffect(() => {
+    if (lightstreamerEnabled && basePolls.length > 0) {
+      const optionIds = getAllOptionIds(basePolls);
+      setOptionIds(optionIds);
+    }
+  }, [basePolls, lightstreamerEnabled, setOptionIds]);
+
+  // Merge Lightstreamer vote updates into polls
+  const polls = useMemo(() => {
+    if (!lightstreamerEnabled || voteUpdates.size === 0) {
+      return basePolls;
+    }
+    return mergeVoteUpdates(basePolls, voteUpdates);
+  }, [basePolls, voteUpdates, lightstreamerEnabled]);
+
+  // Calculate total votes from merged polls
+  const displayTotalVotes = useMemo(() => {
+    return polls.reduce((total, poll) => {
+      return total + poll.poll_options.reduce((pollTotal, option) => {
+        return pollTotal + (option.vote_count || 0);
+      }, 0);
+    }, 0);
+  }, [polls]);
 
   const handleSignOut = async () => {
     const { error } = await signOut();
@@ -60,16 +94,13 @@ const Index = () => {
     }
   };
 
-
-
   const createPoll = async (pollData: CreatePollData) => {
     try {
-      // Create poll with deadline
+      // Create poll (deadline field not available in shared database)
       const { data: poll, error: pollError } = await supabase
         .from('polls')
         .insert({
-          question: pollData.question,
-          deadline: pollData.deadline?.toISOString()
+          question: pollData.question
         })
         .select()
         .single();
@@ -116,8 +147,6 @@ const Index = () => {
     }
 
     try {
-      console.log('🗳️ Recording vote for poll:', pollId, 'option:', optionId);
-
       // Record the vote
       const { error: voteError } = await supabase
         .from('votes')
@@ -127,25 +156,22 @@ const Index = () => {
         });
 
       if (voteError) throw voteError;
-      console.log('✅ Vote recorded in votes table');
 
-      // Update vote count - manual increment
+      // Increment vote count directly
       const { data: option } = await supabase
         .from('poll_options')
         .select('vote_count')
         .eq('id', optionId)
         .single();
-      
+
       const newVoteCount = (option?.vote_count || 0) + 1;
-      console.log('📊 Updating vote count from', option?.vote_count, 'to', newVoteCount);
-      
+
       const { error: updateError } = await supabase
         .from('poll_options')
         .update({ vote_count: newVoteCount })
         .eq('id', optionId);
 
       if (updateError) throw updateError;
-      console.log('✅ Vote count updated in poll_options table');
 
       setVotedPolls(prev => new Set([...prev, pollId]));
       setLastUpdate(new Date());
@@ -155,7 +181,7 @@ const Index = () => {
         description: "感謝您參與投票。",
       });
     } catch (error) {
-      console.error('❌ Error voting:', error);
+      console.error('[Vote] Error:', error);
       toast({
         title: "錯誤",
         description: "記錄投票失敗，請重試。",
@@ -186,7 +212,7 @@ const Index = () => {
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-4">
             立即建立投票並收集任何人的意見。簡單、快速且美觀。
           </p>
-          
+
           {/* Stats display */}
           <div className="flex flex-wrap justify-center gap-4 mb-4">
             {/* Total polls count */}
@@ -196,19 +222,23 @@ const Index = () => {
                 總共 {polls.length} 個投票
               </span>
             </div>
-            
+
             {/* Total votes count */}
             <div className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-green-500/10 border border-green-500/20">
               <Vote className="w-4 h-4 mr-2 text-green-600" />
               <span className="text-sm font-medium text-green-600">
-                總共 {totalVotes} 票
+                總共 {lightstreamerEnabled ? displayTotalVotes : totalVotes} 票
               </span>
             </div>
           </div>
-          
+
           {/* Real-time connection status - Centered */}
           <div className="flex justify-center">
-            <RealtimeIndicator status={connectionStatus} lastUpdate={lastUpdate} />
+            <RealtimeIndicator
+              status={supabaseStatus}
+              lightstreamerStatus={lightstreamerEnabled ? lightstreamerStatus : undefined}
+              lastUpdate={lastUpdate}
+            />
           </div>
         </div>
 
@@ -262,7 +292,7 @@ const Index = () => {
           {showCreateForm && isAuthenticated && (
             <CreatePoll onCreatePoll={createPoll} />
           )}
-          
+
           {loading ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
