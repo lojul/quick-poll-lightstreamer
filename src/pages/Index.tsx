@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { CreatePoll } from '@/components/CreatePoll';
 import { PollList } from '@/components/PollList';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,10 @@ import { useLightstreamerVisitors } from '@/hooks/useLightstreamerVisitors';
 import { RealtimeIndicator } from '@/components/RealtimeIndicator';
 import { AuthModal } from '@/components/AuthModal';
 import { useAuth } from '@/hooks/useAuth';
+import { useCredits, POLL_COST, VOTE_COST } from '@/hooks/useCredits';
+import { CreditBalance } from '@/components/CreditBalance';
+import { TopUpModal } from '@/components/TopUpModal';
+import { InsufficientCreditsModal } from '@/components/InsufficientCreditsModal';
 import { supabase } from '@/integrations/supabase/client';
 
 const VOTED_POLLS_KEY = 'quick-polls-voted';
@@ -37,16 +42,58 @@ const saveVotedPolls = (polls: Set<string>) => {
 const Index = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showTopUpModal, setShowTopUpModal] = useState(false);
+  const [insufficientCreditsState, setInsufficientCreditsState] = useState<{
+    open: boolean;
+    action: 'poll' | 'vote';
+    creditsNeeded: number;
+  }>({ open: false, action: 'poll', creditsNeeded: 0 });
   const [votedPolls, setVotedPolls] = useState<Set<string>>(() => loadVotedPolls());
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Auth hook
   const { user, isAuthenticated, signUp, signIn, signOut } = useAuth();
+
+  // Credits hook
+  const {
+    credits,
+    loading: creditsLoading,
+    hasEnoughForPoll,
+    hasEnoughForVote,
+    deductForPoll,
+    deductForVote,
+    refetch: refetchCredits,
+  } = useCredits();
 
   // Save voted polls whenever they change
   useEffect(() => {
     saveVotedPolls(votedPolls);
   }, [votedPolls]);
   const { toast } = useToast();
+
+  // Handle payment success/cancelled URL params
+  useEffect(() => {
+    const payment = searchParams.get('payment');
+    if (payment === 'success') {
+      toast({
+        title: '付款成功！',
+        description: '積分已加入您的帳戶。',
+      });
+      refetchCredits();
+      // Remove the query param
+      searchParams.delete('payment');
+      setSearchParams(searchParams, { replace: true });
+    } else if (payment === 'cancelled') {
+      toast({
+        title: '付款已取消',
+        description: '您已取消付款流程。',
+        variant: 'destructive',
+      });
+      // Remove the query param
+      searchParams.delete('payment');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams, toast, refetchCredits]);
 
   // Use real-time polls hook (Supabase for CRUD)
   const { polls: basePolls, loading, connectionStatus: supabaseStatus, totalVotes } = useRealtimePolls();
@@ -99,17 +146,41 @@ const Index = () => {
   };
 
   const createPoll = async (pollData: CreatePollData) => {
+    // Check credits before creating poll
+    if (!hasEnoughForPoll) {
+      setInsufficientCreditsState({
+        open: true,
+        action: 'poll',
+        creditsNeeded: POLL_COST,
+      });
+      return;
+    }
+
     try {
-      // Create poll (deadline field not available in shared database)
+      // Create poll with created_by
       const { data: poll, error: pollError } = await supabase
         .from('polls')
         .insert({
-          question: pollData.question
+          question: pollData.question,
+          created_by: user?.id,
         })
         .select()
         .single();
 
       if (pollError) throw pollError;
+
+      // Deduct credits for poll creation
+      const deducted = await deductForPoll(poll.id);
+      if (!deducted) {
+        // Rollback: delete the poll if credit deduction failed
+        await supabase.from('polls').delete().eq('id', poll.id);
+        toast({
+          title: "錯誤",
+          description: "扣除積分失敗，請重試。",
+          variant: "destructive"
+        });
+        return;
+      }
 
       // Create poll options
       const { error: optionsError } = await supabase
@@ -127,7 +198,7 @@ const Index = () => {
       // Real-time updates will handle the new poll automatically
       toast({
         title: "投票已建立！",
-        description: "您的投票現在已上線並準備接受投票。",
+        description: `您的投票現在已上線。已扣除 ${POLL_COST} 積分。`,
       });
     } catch (error) {
       console.error('Error creating poll:', error);
@@ -150,16 +221,35 @@ const Index = () => {
       return;
     }
 
+    // Check credits for authenticated users
+    if (isAuthenticated && !hasEnoughForVote) {
+      setInsufficientCreditsState({
+        open: true,
+        action: 'vote',
+        creditsNeeded: VOTE_COST,
+      });
+      return;
+    }
+
     try {
-      // Record the vote
+      // Record the vote with voter_id if authenticated
       const { error: voteError } = await supabase
         .from('votes')
         .insert({
           poll_id: pollId,
-          option_id: optionId
+          option_id: optionId,
+          voter_id: user?.id || null,
         });
 
       if (voteError) throw voteError;
+
+      // Deduct credits for authenticated users
+      if (isAuthenticated && user) {
+        const deducted = await deductForVote(pollId);
+        if (!deducted) {
+          console.warn('Failed to deduct credits for vote, but vote was recorded');
+        }
+      }
 
       // Increment vote count directly
       const { data: option } = await supabase
@@ -201,6 +291,25 @@ const Index = () => {
         onOpenChange={setShowAuthModal}
         onSignUp={signUp}
         onSignIn={signIn}
+      />
+
+      {/* Top Up Modal */}
+      <TopUpModal
+        open={showTopUpModal}
+        onOpenChange={setShowTopUpModal}
+      />
+
+      {/* Insufficient Credits Modal */}
+      <InsufficientCreditsModal
+        open={insufficientCreditsState.open}
+        onOpenChange={(open) => setInsufficientCreditsState(prev => ({ ...prev, open }))}
+        onTopUp={() => {
+          setInsufficientCreditsState(prev => ({ ...prev, open: false }));
+          setShowTopUpModal(true);
+        }}
+        creditsNeeded={insufficientCreditsState.creditsNeeded}
+        currentCredits={credits ?? 0}
+        action={insufficientCreditsState.action}
       />
 
       <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -257,8 +366,8 @@ const Index = () => {
         <div className="text-center mb-12 space-y-4">
           {isAuthenticated ? (
             <>
-              {/* User info */}
-              <div className="flex items-center justify-center gap-2 mb-4">
+              {/* User info with credit balance */}
+              <div className="flex items-center justify-center gap-2 mb-4 flex-wrap">
                 <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 border border-green-500/30">
                   <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                   <User className="w-4 h-4 text-green-600" />
@@ -266,6 +375,11 @@ const Index = () => {
                     {user?.email}
                   </span>
                 </div>
+                <CreditBalance
+                  credits={credits}
+                  loading={creditsLoading}
+                  onClick={() => setShowTopUpModal(true)}
+                />
                 <Button
                   variant="ghost"
                   size="sm"
@@ -301,7 +415,11 @@ const Index = () => {
         {/* Content */}
         <div className="space-y-12">
           {showCreateForm && isAuthenticated && (
-            <CreatePoll onCreatePoll={createPoll} />
+            <CreatePoll
+              onCreatePoll={createPoll}
+              hasEnoughCredits={hasEnoughForPoll}
+              credits={credits}
+            />
           )}
 
           {loading ? (
@@ -314,6 +432,7 @@ const Index = () => {
               polls={polls}
               onVote={handleVote}
               votedPolls={votedPolls}
+              isAuthenticated={isAuthenticated}
             />
           )}
         </div>

@@ -3,12 +3,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2, Clock } from 'lucide-react';
+import { Plus, Trash2, Clock, Coins } from 'lucide-react';
 import { CreatePollData } from '@/types/poll';
+import { POLL_COST } from '@/hooks/useCredits';
 
 interface CreatePollProps {
   onCreatePoll: (pollData: CreatePollData) => void;
+  hasEnoughCredits?: boolean;
+  credits?: number | null;
 }
 
 const DEADLINE_OPTIONS = [
@@ -19,7 +23,7 @@ const DEADLINE_OPTIONS = [
   { value: '30', label: '30 天' },
 ];
 
-export function CreatePoll({ onCreatePoll }: CreatePollProps) {
+export function CreatePoll({ onCreatePoll, hasEnoughCredits = true, credits }: CreatePollProps) {
   const [question, setQuestion] = useState('');
   const [options, setOptions] = useState(['', '']);
   const [deadlineDays, setDeadlineDays] = useState('3');
@@ -66,13 +70,30 @@ export function CreatePoll({ onCreatePoll }: CreatePollProps) {
     setDeadlineDays('3');
   };
 
-  const isValid = question.trim() && options.filter(option => option.trim()).length >= 2;
+  const isValid = question.trim() && options.filter(option => option.trim()).length >= 2 && hasEnoughCredits;
 
   return (
     <Card className="p-6 bg-poll-card border-poll-card-border">
-      <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
-        建立新投票
-      </h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
+          建立新投票
+        </h2>
+        <Badge variant="secondary" className="flex items-center gap-1">
+          <Coins className="w-3.5 h-3.5" />
+          費用: {POLL_COST} 積分
+        </Badge>
+      </div>
+
+      {!hasEnoughCredits && (
+        <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-yellow-700 text-sm">
+          <div className="flex items-center gap-2">
+            <Coins className="w-4 h-4" />
+            <span>
+              積分不足。您目前有 {credits ?? 0} 積分，需要 {POLL_COST} 積分才能建立投票。
+            </span>
+          </div>
+        </div>
+      )}
       
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">

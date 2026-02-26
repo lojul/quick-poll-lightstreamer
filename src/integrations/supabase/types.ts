@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      credit_transactions: {
+        Row: {
+          id: string
+          user_id: string
+          amount: number
+          balance_after: number
+          transaction_type: 'signup_bonus' | 'poll_creation' | 'vote' | 'purchase' | 'refund' | 'admin_adjustment'
+          reference_id: string | null
+          description: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          amount: number
+          balance_after: number
+          transaction_type: 'signup_bonus' | 'poll_creation' | 'vote' | 'purchase' | 'refund' | 'admin_adjustment'
+          reference_id?: string | null
+          description?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          amount?: number
+          balance_after?: number
+          transaction_type?: 'signup_bonus' | 'poll_creation' | 'vote' | 'purchase' | 'refund' | 'admin_adjustment'
+          reference_id?: string | null
+          description?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       poll_options: {
         Row: {
           created_at: string
@@ -52,20 +93,110 @@ export type Database = {
           id: string
           question: string
           updated_at: string
+          created_by: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           question: string
           updated_at?: string
+          created_by?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           question?: string
           updated_at?: string
+          created_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "polls_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          id: string
+          credits: number
+          stripe_customer_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          credits?: number
+          stripe_customer_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          credits?: number
+          stripe_customer_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stripe_payments: {
+        Row: {
+          id: string
+          user_id: string
+          stripe_session_id: string | null
+          stripe_payment_intent_id: string | null
+          amount_cents: number
+          credits_purchased: number
+          status: 'pending' | 'completed' | 'failed' | 'refunded'
+          package_type: 'small' | 'medium' | 'large'
+          created_at: string
+          completed_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          stripe_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          amount_cents: number
+          credits_purchased: number
+          status?: 'pending' | 'completed' | 'failed' | 'refunded'
+          package_type: 'small' | 'medium' | 'large'
+          created_at?: string
+          completed_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          stripe_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          amount_cents?: number
+          credits_purchased?: number
+          status?: 'pending' | 'completed' | 'failed' | 'refunded'
+          package_type?: 'small' | 'medium' | 'large'
+          created_at?: string
+          completed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stripe_payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       votes: {
         Row: {
@@ -74,6 +205,7 @@ export type Database = {
           option_id: string
           poll_id: string
           voter_ip: string | null
+          voter_id: string | null
         }
         Insert: {
           created_at?: string
@@ -81,6 +213,7 @@ export type Database = {
           option_id: string
           poll_id: string
           voter_ip?: string | null
+          voter_id?: string | null
         }
         Update: {
           created_at?: string
@@ -88,6 +221,7 @@ export type Database = {
           option_id?: string
           poll_id?: string
           voter_ip?: string | null
+          voter_id?: string | null
         }
         Relationships: [
           {
@@ -104,6 +238,13 @@ export type Database = {
             referencedRelation: "polls"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "votes_voter_id_fkey"
+            columns: ["voter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
@@ -111,7 +252,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      deduct_credits_for_poll: {
+        Args: {
+          p_user_id: string
+          p_poll_id: string
+          p_cost?: number
+        }
+        Returns: boolean
+      }
+      deduct_credits_for_vote: {
+        Args: {
+          p_user_id: string
+          p_poll_id: string
+          p_cost?: number
+        }
+        Returns: boolean
+      }
+      add_credits_from_purchase: {
+        Args: {
+          p_user_id: string
+          p_credits: number
+          p_payment_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

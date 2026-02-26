@@ -5,16 +5,18 @@ import { Poll } from '@/types/poll';
 import { PollChart } from './PollChart';
 import { formatDistanceToNow, isPast } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
-import { BarChart3, List, Clock, AlertCircle } from 'lucide-react';
+import { BarChart3, List, Clock, AlertCircle, Coins } from 'lucide-react';
 import { useState } from 'react';
+import { VOTE_COST } from '@/hooks/useCredits';
 
 interface PollCardProps {
   poll: Poll;
   onVote: (pollId: string, optionId: string) => void;
   hasVoted?: boolean;
+  isAuthenticated?: boolean;
 }
 
-export function PollCard({ poll, onVote, hasVoted = false }: PollCardProps) {
+export function PollCard({ poll, onVote, hasVoted = false, isAuthenticated = false }: PollCardProps) {
   const [viewMode, setViewMode] = useState<'list' | 'chart'>('list');
 
   // Handle case where deadline doesn't exist yet (before migration)
@@ -161,11 +163,19 @@ export function PollCard({ poll, onVote, hasVoted = false }: PollCardProps) {
 
         <div className="flex justify-between items-center text-sm text-muted-foreground pt-2 border-t border-poll-card-border">
           <span>建立於 {formatDistanceToNow(new Date(poll.created_at), { addSuffix: true })}</span>
-          {hasVoted && (
-            <Badge variant="outline" className="bg-success/20 text-success border-success/50">
-              已投票
-            </Badge>
-          )}
+          <div className="flex items-center gap-2">
+            {isAuthenticated && canVote && (
+              <Badge variant="secondary" className="flex items-center gap-1 text-xs">
+                <Coins className="w-3 h-3" />
+                {VOTE_COST} 積分
+              </Badge>
+            )}
+            {hasVoted && (
+              <Badge variant="outline" className="bg-success/20 text-success border-success/50">
+                已投票
+              </Badge>
+            )}
+          </div>
         </div>
       </div>
     </Card>
