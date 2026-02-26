@@ -128,4 +128,14 @@ export function isLightstreamerEnabled(): boolean {
   return !!LIGHTSTREAMER_URL;
 }
 
+/**
+ * Create a subscription for concurrent visitor count
+ */
+export function createVisitorSubscription(): Subscription {
+  const subscription = new Subscription("MERGE", ["visitors"], ["count"]);
+  subscription.setRequestedSnapshot("yes");
+  subscription.setDataAdapter("VoteAdapter");
+  return subscription;
+}
+
 export { LightstreamerClient, Subscription };

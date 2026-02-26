@@ -1,10 +1,16 @@
 /**
  * Lightstreamer Data Adapter for Poll Vote Streaming
  *
- * This adapter:
- * 1. Connects to Supabase and subscribes to poll_options changes
- * 2. Pushes vote count updates to Lightstreamer clients in real-time
- * 3. Provides snapshot data when clients subscribe
+ * Architecture:
+ * - Frontend votes → Supabase DB (direct write)
+ * - Adapter polls Supabase every 500ms to detect changes
+ * - Adapter pushes updates via Lightstreamer to ALL connected clients
+ * - NO dependency on Supabase Realtime (unreliable server-side)
+ *
+ * Features:
+ * 1. Real-time vote streaming via Lightstreamer
+ * 2. Concurrent visitor tracking
+ * 3. 500ms polling for reliable change detection
  */
 
 import { DataProvider } from "lightstreamer-adapter";
@@ -30,6 +36,10 @@ const subscribedItems = new Map(); // itemName -> { optionId, isActive }
 
 // Current vote counts cache
 const voteCounts = new Map(); // optionId -> vote_count
+
+// Track concurrent visitors (unique session count)
+let concurrentVisitors = 0;
+const VISITOR_ITEM = "visitors";
 
 // Data provider instance
 let dataProvider = null;
@@ -60,14 +70,30 @@ function initDataProvider() {
 
       // Set snapshot availability handler
       dataProvider.on("isSnapshotAvailable", (itemName, callback) => {
-        callback(itemName.startsWith("option_"));
+        callback(itemName.startsWith("option_") || itemName === VISITOR_ITEM);
       });
 
       // Handle subscription requests
       dataProvider.on("subscribe", async (itemName, response) => {
+        // Handle visitor count subscription
+        if (itemName === VISITOR_ITEM) {
+          subscribedItems.set(itemName, { isActive: true, isVisitorItem: true });
+          concurrentVisitors++;
+          response.success();
+
+          // Send snapshot with current visitor count
+          dataProvider.update(VISITOR_ITEM, true, {
+            count: String(concurrentVisitors),
+          });
+
+          // Broadcast updated count to all visitor subscribers
+          broadcastVisitorCount();
+          console.log(`[Adapter] Visitor connected. Total: ${concurrentVisitors}`);
+          return;
+        }
 
         if (!itemName.startsWith("option_")) {
-          response.error("Invalid item name. Expected format: option_<uuid>");
+          response.error("Invalid item name. Expected format: option_<uuid> or 'visitors'");
           return;
         }
 
@@ -110,9 +136,16 @@ function initDataProvider() {
 
       // Handle unsubscription
       dataProvider.on("unsubscribe", (itemName, response) => {
-
         if (subscribedItems.has(itemName)) {
+          const item = subscribedItems.get(itemName);
           subscribedItems.delete(itemName);
+
+          // Decrement visitor count if this was a visitor subscription
+          if (item?.isVisitorItem) {
+            concurrentVisitors = Math.max(0, concurrentVisitors - 1);
+            broadcastVisitorCount();
+            console.log(`[Adapter] Visitor disconnected. Total: ${concurrentVisitors}`);
+          }
         }
 
         response.success();
@@ -130,38 +163,71 @@ function initDataProvider() {
 }
 
 /**
- * Subscribe to Supabase real-time changes for poll_options
+ * Broadcast visitor count to all subscribed clients
  */
-function subscribeToSupabase() {
-  const channel = supabase
-    .channel("poll-options-changes")
-    .on(
-      "postgres_changes",
-      { event: "UPDATE", schema: "public", table: "poll_options" },
-      (payload) => {
-        const { id, vote_count } = payload.new;
+function broadcastVisitorCount() {
+  if (!dataProvider) return;
 
-        // Update cache
-        voteCounts.set(id, vote_count);
+  // Broadcast to all clients (not just snapshot)
+  dataProvider.update(VISITOR_ITEM, false, {
+    count: String(concurrentVisitors),
+  });
+}
 
-        // Push update to Lightstreamer clients
-        const itemName = `option_${id}`;
-        if (subscribedItems.has(itemName) && subscribedItems.get(itemName).isActive) {
-          dataProvider.update(itemName, false, {
-            vote_count: String(vote_count),
-          });
+/**
+ * Poll Supabase for vote count changes
+ * This is the PRIMARY mechanism for detecting changes (no Supabase Realtime dependency)
+ * Polls every 500ms for all subscribed options
+ */
+let pollInterval = null;
+const POLL_INTERVAL_MS = 500;
+
+function startPolling() {
+  if (pollInterval) return;
+
+  pollInterval = setInterval(async () => {
+    // Get all subscribed option IDs (excluding visitor item)
+    const optionIds = [];
+    for (const [itemName, item] of subscribedItems.entries()) {
+      if (item.optionId && item.isActive) {
+        optionIds.push(item.optionId);
+      }
+    }
+
+    if (optionIds.length === 0) return;
+
+    try {
+      // Batch fetch all vote counts
+      const { data, error } = await supabase
+        .from("poll_options")
+        .select("id, vote_count")
+        .in("id", optionIds);
+
+      if (error) {
+        console.error("[Polling] Error fetching vote counts:", error);
+        return;
+      }
+
+      // Check for changes and push updates
+      for (const option of data || []) {
+        const cachedCount = voteCounts.get(option.id);
+        if (cachedCount !== option.vote_count) {
+          voteCounts.set(option.id, option.vote_count);
+          const itemName = `option_${option.id}`;
+          if (subscribedItems.has(itemName)) {
+            dataProvider.update(itemName, false, {
+              vote_count: String(option.vote_count),
+            });
+            console.log(`[Polling] Pushed update: ${itemName} = ${option.vote_count}`);
+          }
         }
       }
-    )
-    .subscribe((status, err) => {
-      if (status === "SUBSCRIBED") {
-        console.log("[Supabase] Subscribed to poll_options changes");
-      } else if (err) {
-        console.error("[Supabase] Subscription error:", err);
-      }
-    });
+    } catch (err) {
+      console.error("[Polling] Exception:", err);
+    }
+  }, POLL_INTERVAL_MS);
 
-  return channel;
+  console.log(`[Polling] Started polling every ${POLL_INTERVAL_MS}ms`);
 }
 
 /**
@@ -201,8 +267,8 @@ async function main() {
     process.exit(1);
   }
 
-  // Subscribe to Supabase changes
-  subscribeToSupabase();
+  // Start polling to detect vote changes (primary mechanism, no Supabase Realtime)
+  startPolling();
 
   console.log("[Adapter] Poll Vote Adapter is running");
 

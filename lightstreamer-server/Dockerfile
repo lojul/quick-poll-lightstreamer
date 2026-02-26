@@ -1,5 +1,5 @@
 # Lightstreamer Server with Node.js Remote Adapter
-# Build timestamp: 2026-02-25-v9
+# Build timestamp: 2026-02-26-v10
 
 # Stage 1: Build Node.js adapter
 FROM alpine:latest AS builder

@@ -3,10 +3,11 @@ import { CreatePoll } from '@/components/CreatePoll';
 import { PollList } from '@/components/PollList';
 import { Button } from '@/components/ui/button';
 import { CreatePollData } from '@/types/poll';
-import { PlusCircle, Vote, LogIn, LogOut, User } from 'lucide-react';
+import { PlusCircle, Vote, LogIn, LogOut, User, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRealtimePolls, getAllOptionIds, mergeVoteUpdates } from '@/hooks/useRealtimePolls';
 import { useLightstreamerVotes } from '@/hooks/useLightstreamerVotes';
+import { useLightstreamerVisitors } from '@/hooks/useLightstreamerVisitors';
 import { RealtimeIndicator } from '@/components/RealtimeIndicator';
 import { AuthModal } from '@/components/AuthModal';
 import { useAuth } from '@/hooks/useAuth';
@@ -58,6 +59,9 @@ const Index = () => {
     isEnabled: lightstreamerEnabled,
     setOptionIds
   } = useLightstreamerVotes();
+
+  // Use Lightstreamer for concurrent visitor tracking
+  const { visitorCount, isEnabled: visitorTrackingEnabled } = useLightstreamerVisitors();
 
   // Update Lightstreamer subscription when polls change
   useEffect(() => {
@@ -175,7 +179,6 @@ const Index = () => {
 
       setVotedPolls(prev => new Set([...prev, pollId]));
       setLastUpdate(new Date());
-      // Real-time updates will handle the vote count changes automatically
       toast({
         title: "投票已記錄！",
         description: "感謝您參與投票。",
@@ -230,6 +233,16 @@ const Index = () => {
                 總共 {lightstreamerEnabled ? displayTotalVotes : totalVotes} 票
               </span>
             </div>
+
+            {/* Concurrent visitors */}
+            {visitorTrackingEnabled && (
+              <div className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20">
+                <Users className="w-4 h-4 mr-2 text-blue-600" />
+                <span className="text-sm font-medium text-blue-600">
+                  {visitorCount} 人在線
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Real-time connection status - Centered */}
