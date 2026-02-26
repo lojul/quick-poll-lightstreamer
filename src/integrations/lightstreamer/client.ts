@@ -130,12 +130,23 @@ export function isLightstreamerEnabled(): boolean {
 
 /**
  * Create a subscription for concurrent visitor count
+ * Uses a unique visitor ID so each browser is counted separately
  */
-export function createVisitorSubscription(): Subscription {
-  const subscription = new Subscription("MERGE", ["visitors"], ["count"]);
-  subscription.setRequestedSnapshot("yes");
-  subscription.setDataAdapter("VoteAdapter");
-  return subscription;
+export function createVisitorSubscription(): { visitorSub: Subscription; countSub: Subscription; visitorId: string } {
+  // Generate unique visitor ID
+  const visitorId = `visitor_${crypto.randomUUID()}`;
+
+  // Subscribe to unique visitor item (for tracking this visitor)
+  const visitorSub = new Subscription("MERGE", [visitorId], ["ping"]);
+  visitorSub.setRequestedSnapshot("yes");
+  visitorSub.setDataAdapter("VoteAdapter");
+
+  // Subscribe to visitor count (to receive total count updates)
+  const countSub = new Subscription("MERGE", ["visitors_count"], ["count"]);
+  countSub.setRequestedSnapshot("yes");
+  countSub.setDataAdapter("VoteAdapter");
+
+  return { visitorSub, countSub, visitorId };
 }
 
 export { LightstreamerClient, Subscription };

@@ -10,9 +10,13 @@
         <param name="item_family_1">option_.*</param>
         <param name="modes_for_item_family_1">MERGE</param>
 
-        <!-- Allow visitors item -->
-        <param name="item_family_2">visitors</param>
+        <!-- Allow individual visitor items (visitor_<uuid>) -->
+        <param name="item_family_2">visitor_.*</param>
         <param name="modes_for_item_family_2">MERGE</param>
+
+        <!-- Allow visitor count item -->
+        <param name="item_family_3">visitors_count</param>
+        <param name="modes_for_item_family_3">MERGE</param>
     </metadata_provider>
 
     <!-- Data Adapter - Robust Proxy for Remote Adapter -->

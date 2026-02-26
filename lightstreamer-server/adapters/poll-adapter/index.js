@@ -37,9 +37,9 @@ const subscribedItems = new Map(); // itemName -> { optionId, isActive }
 // Current vote counts cache
 const voteCounts = new Map(); // optionId -> vote_count
 
-// Track concurrent visitors (unique session count)
-let concurrentVisitors = 0;
-const VISITOR_ITEM = "visitors";
+// Track concurrent visitors (unique visitor subscriptions)
+const visitorItems = new Set(); // Set of visitor_* item names
+const VISITOR_COUNT_ITEM = "visitors_count";
 
 // Data provider instance
 let dataProvider = null;
@@ -70,30 +70,45 @@ function initDataProvider() {
 
       // Set snapshot availability handler
       dataProvider.on("isSnapshotAvailable", (itemName, callback) => {
-        callback(itemName.startsWith("option_") || itemName === VISITOR_ITEM);
+        callback(
+          itemName.startsWith("option_") ||
+          itemName.startsWith("visitor_") ||
+          itemName === VISITOR_COUNT_ITEM
+        );
       });
 
       // Handle subscription requests
       dataProvider.on("subscribe", async (itemName, response) => {
-        // Handle visitor count subscription
-        if (itemName === VISITOR_ITEM) {
+        // Handle individual visitor subscription (visitor_<uuid>)
+        if (itemName.startsWith("visitor_")) {
           subscribedItems.set(itemName, { isActive: true, isVisitorItem: true });
-          concurrentVisitors++;
+          visitorItems.add(itemName);
+          response.success();
+
+          // Send snapshot (just a ping acknowledgment)
+          dataProvider.update(itemName, true, { ping: "1" });
+
+          // Broadcast updated count to all visitors_count subscribers
+          broadcastVisitorCount();
+          console.log(`[Adapter] Visitor connected: ${itemName}. Total: ${visitorItems.size}`);
+          return;
+        }
+
+        // Handle visitor count subscription (to receive total count)
+        if (itemName === VISITOR_COUNT_ITEM) {
+          subscribedItems.set(itemName, { isActive: true, isCountItem: true });
           response.success();
 
           // Send snapshot with current visitor count
-          dataProvider.update(VISITOR_ITEM, true, {
-            count: String(concurrentVisitors),
+          dataProvider.update(VISITOR_COUNT_ITEM, true, {
+            count: String(visitorItems.size),
           });
-
-          // Broadcast updated count to all visitor subscribers
-          broadcastVisitorCount();
-          console.log(`[Adapter] Visitor connected. Total: ${concurrentVisitors}`);
+          console.log(`[Adapter] Visitor count subscription. Current: ${visitorItems.size}`);
           return;
         }
 
         if (!itemName.startsWith("option_")) {
-          response.error("Invalid item name. Expected format: option_<uuid> or 'visitors'");
+          response.error("Invalid item name. Expected format: option_<uuid>, visitor_<uuid>, or 'visitors_count'");
           return;
         }
 
@@ -140,11 +155,11 @@ function initDataProvider() {
           const item = subscribedItems.get(itemName);
           subscribedItems.delete(itemName);
 
-          // Decrement visitor count if this was a visitor subscription
-          if (item?.isVisitorItem) {
-            concurrentVisitors = Math.max(0, concurrentVisitors - 1);
+          // Remove from visitor tracking if this was a visitor subscription
+          if (item?.isVisitorItem && visitorItems.has(itemName)) {
+            visitorItems.delete(itemName);
             broadcastVisitorCount();
-            console.log(`[Adapter] Visitor disconnected. Total: ${concurrentVisitors}`);
+            console.log(`[Adapter] Visitor disconnected: ${itemName}. Total: ${visitorItems.size}`);
           }
         }
 
@@ -168,10 +183,16 @@ function initDataProvider() {
 function broadcastVisitorCount() {
   if (!dataProvider) return;
 
-  // Broadcast to all clients (not just snapshot)
-  dataProvider.update(VISITOR_ITEM, false, {
-    count: String(concurrentVisitors),
-  });
+  // Only broadcast if someone is subscribed to visitors_count
+  if (subscribedItems.has(VISITOR_COUNT_ITEM)) {
+    try {
+      dataProvider.update(VISITOR_COUNT_ITEM, false, {
+        count: String(visitorItems.size),
+      });
+    } catch (err) {
+      // Ignore errors if item not subscribed
+    }
+  }
 }
 
 /**

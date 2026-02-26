@@ -17,13 +17,14 @@ export interface UseLightstreamerVisitorsReturn {
 
 /**
  * React hook for tracking concurrent visitors via Lightstreamer
- * Automatically subscribes when the Lightstreamer client is available
+ * Uses unique visitor IDs so each browser is counted separately
  *
  * @returns Visitor count and enabled status
  */
 export function useLightstreamerVisitors(): UseLightstreamerVisitorsReturn {
   const [visitorCount, setVisitorCount] = useState(0);
-  const subscriptionRef = useRef<Subscription | null>(null);
+  const visitorSubRef = useRef<Subscription | null>(null);
+  const countSubRef = useRef<Subscription | null>(null);
 
   useEffect(() => {
     if (!isLightstreamerEnabled()) {
@@ -33,14 +34,15 @@ export function useLightstreamerVisitors(): UseLightstreamerVisitorsReturn {
     const client = getLightstreamerClient();
     if (!client) return;
 
-    // Create subscription for visitor count
-    console.log("[Visitors] Creating subscription...");
-    const subscription = createVisitorSubscription();
+    // Create subscriptions for visitor tracking
+    console.log("[Visitors] Creating subscriptions...");
+    const { visitorSub, countSub, visitorId } = createVisitorSubscription();
 
-    subscription.addListener({
+    // Listen for count updates
+    countSub.addListener({
       onItemUpdate: (update) => {
         const countStr = update.getValue("count");
-        console.log("[Visitors] Received update:", countStr);
+        console.log("[Visitors] Received count update:", countStr);
         if (countStr !== null) {
           const count = parseInt(countStr, 10);
           if (!isNaN(count)) {
@@ -49,23 +51,39 @@ export function useLightstreamerVisitors(): UseLightstreamerVisitorsReturn {
         }
       },
       onSubscription: () => {
-        console.log("[Visitors] Subscription active");
+        console.log("[Visitors] Count subscription active");
       },
       onSubscriptionError: (code, message) => {
-        console.error(`[Visitors] Subscription error ${code}: ${message}`);
+        console.error(`[Visitors] Count subscription error ${code}: ${message}`);
       },
     });
 
-    // Subscribe - Lightstreamer will queue this if not yet connected
-    console.log("[Visitors] Subscribing...");
-    subscribe(subscription);
-    subscriptionRef.current = subscription;
+    // Visitor subscription just registers this visitor
+    visitorSub.addListener({
+      onSubscription: () => {
+        console.log("[Visitors] Visitor registered:", visitorId);
+      },
+      onSubscriptionError: (code, message) => {
+        console.error(`[Visitors] Visitor subscription error ${code}: ${message}`);
+      },
+    });
+
+    // Subscribe to both
+    console.log("[Visitors] Subscribing with visitor ID:", visitorId);
+    subscribe(visitorSub);
+    subscribe(countSub);
+    visitorSubRef.current = visitorSub;
+    countSubRef.current = countSub;
 
     return () => {
-      if (subscriptionRef.current) {
-        console.log("[Visitors] Unsubscribing...");
-        unsubscribe(subscriptionRef.current);
-        subscriptionRef.current = null;
+      console.log("[Visitors] Unsubscribing...");
+      if (visitorSubRef.current) {
+        unsubscribe(visitorSubRef.current);
+        visitorSubRef.current = null;
+      }
+      if (countSubRef.current) {
+        unsubscribe(countSubRef.current);
+        countSubRef.current = null;
       }
     };
   }, []);
