@@ -17,6 +17,7 @@ export interface UseLightstreamerVisitorsReturn {
 
 /**
  * React hook for tracking concurrent visitors via Lightstreamer
+ * Automatically subscribes when the Lightstreamer client is available
  *
  * @returns Visitor count and enabled status
  */
@@ -32,13 +33,14 @@ export function useLightstreamerVisitors(): UseLightstreamerVisitorsReturn {
     const client = getLightstreamerClient();
     if (!client) return;
 
-    // Create visitor subscription
+    // Create subscription for visitor count
+    console.log("[Visitors] Creating subscription...");
     const subscription = createVisitorSubscription();
 
-    // Add listener for visitor updates
     subscription.addListener({
       onItemUpdate: (update) => {
         const countStr = update.getValue("count");
+        console.log("[Visitors] Received update:", countStr);
         if (countStr !== null) {
           const count = parseInt(countStr, 10);
           if (!isNaN(count)) {
@@ -46,17 +48,22 @@ export function useLightstreamerVisitors(): UseLightstreamerVisitorsReturn {
           }
         }
       },
+      onSubscription: () => {
+        console.log("[Visitors] Subscription active");
+      },
       onSubscriptionError: (code, message) => {
-        console.error(`[Lightstreamer] Visitor subscription error ${code}: ${message}`);
+        console.error(`[Visitors] Subscription error ${code}: ${message}`);
       },
     });
 
-    // Subscribe
+    // Subscribe - Lightstreamer will queue this if not yet connected
+    console.log("[Visitors] Subscribing...");
     subscribe(subscription);
     subscriptionRef.current = subscription;
 
     return () => {
       if (subscriptionRef.current) {
+        console.log("[Visitors] Unsubscribing...");
         unsubscribe(subscriptionRef.current);
         subscriptionRef.current = null;
       }

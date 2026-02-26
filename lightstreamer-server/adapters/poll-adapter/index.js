@@ -215,10 +215,15 @@ function startPolling() {
           voteCounts.set(option.id, option.vote_count);
           const itemName = `option_${option.id}`;
           if (subscribedItems.has(itemName)) {
-            dataProvider.update(itemName, false, {
-              vote_count: String(option.vote_count),
-            });
-            console.log(`[Polling] Pushed update: ${itemName} = ${option.vote_count}`);
+            try {
+              dataProvider.update(itemName, false, {
+                vote_count: String(option.vote_count),
+              });
+              console.log(`[Polling] Pushed update: ${itemName} = ${option.vote_count}`);
+            } catch (updateErr) {
+              // Item may have been unsubscribed between check and update (race condition)
+              // This is expected and can be safely ignored
+            }
           }
         }
       }

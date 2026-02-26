@@ -6,9 +6,13 @@
     <metadata_provider>
         <adapter_class>com.lightstreamer.adapters.metadata.LiteralBasedProvider</adapter_class>
 
-        <!-- Allow all items -->
+        <!-- Allow poll option items -->
         <param name="item_family_1">option_.*</param>
         <param name="modes_for_item_family_1">MERGE</param>
+
+        <!-- Allow visitors item -->
+        <param name="item_family_2">visitors</param>
+        <param name="modes_for_item_family_2">MERGE</param>
     </metadata_provider>
 
     <!-- Data Adapter - Robust Proxy for Remote Adapter -->

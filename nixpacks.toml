@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["nodejs-20_x", "npm"]
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[start]
+cmd = "npx serve dist -l ${PORT:-8080}"
