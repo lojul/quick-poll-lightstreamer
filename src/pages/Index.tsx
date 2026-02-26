@@ -38,7 +38,6 @@ const Index = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [votedPolls, setVotedPolls] = useState<Set<string>>(() => loadVotedPolls());
-  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
   // Auth hook
   const { user, isAuthenticated, signUp, signIn, signOut } = useAuth();
@@ -57,7 +56,8 @@ const Index = () => {
     voteUpdates,
     connectionStatus: lightstreamerStatus,
     isEnabled: lightstreamerEnabled,
-    setOptionIds
+    setOptionIds,
+    lastUpdate
   } = useLightstreamerVotes();
 
   // Use Lightstreamer for concurrent visitor tracking
@@ -178,7 +178,7 @@ const Index = () => {
       if (updateError) throw updateError;
 
       setVotedPolls(prev => new Set([...prev, pollId]));
-      setLastUpdate(new Date());
+      // lastUpdate will be updated automatically via Lightstreamer when the vote is detected
       toast({
         title: "投票已記錄！",
         description: "感謝您參與投票。",

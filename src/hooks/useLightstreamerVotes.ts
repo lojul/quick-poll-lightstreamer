@@ -27,6 +27,8 @@ export interface UseLightstreamerVotesReturn {
   isEnabled: boolean;
   /** Update the list of option IDs to subscribe to */
   setOptionIds: (ids: string[]) => void;
+  /** Last time a vote update was received */
+  lastUpdate: Date;
 }
 
 /**
@@ -40,6 +42,7 @@ export function useLightstreamerVotes(): UseLightstreamerVotesReturn {
     isLightstreamerEnabled() ? "disconnected" : "disabled"
   );
   const [optionIds, setOptionIds] = useState<string[]>([]);
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
   const subscriptionRef = useRef<Subscription | null>(null);
   const isConnectedRef = useRef(false);
@@ -114,6 +117,8 @@ export function useLightstreamerVotes(): UseLightstreamerVotesReturn {
               next.set(optionId, voteCount);
               return next;
             });
+            // Update timestamp when vote update received from Lightstreamer
+            setLastUpdate(new Date());
           }
         }
       },
@@ -139,5 +144,6 @@ export function useLightstreamerVotes(): UseLightstreamerVotesReturn {
     connectionStatus,
     isEnabled: isLightstreamerEnabled(),
     setOptionIds,
+    lastUpdate,
   };
 }
