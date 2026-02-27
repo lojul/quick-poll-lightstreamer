@@ -80,7 +80,7 @@ export function CreatePoll({ onCreatePoll, hasEnoughCredits = true, credits }: C
         </h2>
         <Badge variant="secondary" className="flex items-center gap-1">
           <Coins className="w-3.5 h-3.5" />
-          費用: {POLL_COST} 積分
+          費用: {POLL_COST} 閃幣
         </Badge>
       </div>
 
@@ -89,7 +89,7 @@ export function CreatePoll({ onCreatePoll, hasEnoughCredits = true, credits }: C
           <div className="flex items-center gap-2">
             <Coins className="w-4 h-4" />
             <span>
-              積分不足。您目前有 {credits ?? 0} 積分，需要 {POLL_COST} 積分才能建立投票。
+              閃幣不足。您目前有 {credits ?? 0} 閃幣，需要 {POLL_COST} 閃幣才能建立投票。
             </span>
           </div>
         </div>

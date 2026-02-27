@@ -9,9 +9,9 @@ const corsHeaders = {
 
 // Credit packages configuration (prices in HKD cents)
 const CREDIT_PACKAGES = {
-  small: { credits: 100, price_cents: 800, name: '100 積分' },      // HK$8
-  medium: { credits: 500, price_cents: 3800, name: '500 積分' },    // HK$38
-  large: { credits: 1200, price_cents: 7800, name: '1200 積分 (20% 額外)' }, // HK$78
+  small: { credits: 100, price_cents: 300, name: '100 閃幣' },      // HK$3
+  medium: { credits: 500, price_cents: 1800, name: '500 閃幣' },    // HK$18
+  large: { credits: 1200, price_cents: 3800, name: '1200 閃幣 (20% 額外)' }, // HK$38
 } as const;
 
 type PackageType = keyof typeof CREDIT_PACKAGES;
@@ -129,7 +129,7 @@ serve(async (req) => {
             currency: 'hkd',
             product_data: {
               name: selectedPackage.name,
-              description: `購買 ${selectedPackage.credits} 積分`,
+              description: `購買 ${selectedPackage.credits} 閃幣`,
             },
             unit_amount: selectedPackage.price_cents,
           },

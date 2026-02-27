@@ -77,7 +77,7 @@ const Index = () => {
     if (payment === 'success') {
       toast({
         title: '付款成功！',
-        description: '積分已加入您的帳戶。',
+        description: '閃幣已加入您的帳戶。',
       });
       refetchCredits();
       // Remove the query param
@@ -176,7 +176,7 @@ const Index = () => {
         await supabase.from('polls').delete().eq('id', poll.id);
         toast({
           title: "錯誤",
-          description: "扣除積分失敗，請重試。",
+          description: "扣除閃幣失敗，請重試。",
           variant: "destructive"
         });
         return;
@@ -198,7 +198,7 @@ const Index = () => {
       // Real-time updates will handle the new poll automatically
       toast({
         title: "投票已建立！",
-        description: `您的投票現在已上線。已扣除 ${POLL_COST} 積分。`,
+        description: `您的投票現在已上線。已扣除 ${POLL_COST} 閃幣。`,
       });
     } catch (error) {
       console.error('Error creating poll:', error);

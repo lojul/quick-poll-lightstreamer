@@ -38,7 +38,10 @@
       "Bash(docker build:*)",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: add Lightstreamer for real-time vote streaming\n\n- Add Lightstreamer server with Node.js remote adapter \\(Railway deployment\\)\n- Create useLightstreamerVotes hook for sub-50ms vote updates\n- Improve RealtimeIndicator with combined connection status UI\n- Reduce verbose logging in adapter and client\n- Remove non-existent RPC call, use direct vote increment\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(git commit:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(tree:*)",
+      "Bash(npx supabase:*)",
+      "WebFetch(domain:railway.com)"
     ]
   }
 }

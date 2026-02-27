@@ -22,24 +22,24 @@ const PACKAGES = [
   {
     id: 'small',
     credits: 100,
-    price: 'HK$8',
-    priceCents: 800,
+    price: 'HK$3',
+    priceCents: 300,
     label: '入門方案',
     popular: false,
   },
   {
     id: 'medium',
     credits: 500,
-    price: 'HK$38',
-    priceCents: 3800,
+    price: 'HK$18',
+    priceCents: 1800,
     label: '標準方案',
     popular: true,
   },
   {
     id: 'large',
     credits: 1200,
-    price: 'HK$78',
-    priceCents: 7800,
+    price: 'HK$38',
+    priceCents: 3800,
     label: '超值方案',
     bonus: '+20%',
     popular: false,
@@ -87,10 +87,10 @@ export function TopUpModal({ open, onOpenChange }: TopUpModalProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Coins className="w-5 h-5 text-yellow-600" />
-            購買積分
+            購買閃幣
           </DialogTitle>
           <DialogDescription>
-            選擇適合您的積分方案。積分可用於建立投票 (10積分) 和投票 (1積分)。
+            選擇適合您的閃幣方案。閃幣可用於建立投票 (10閃幣) 和投票 (1閃幣)。
           </DialogDescription>
         </DialogHeader>
 
@@ -121,7 +121,7 @@ export function TopUpModal({ open, onOpenChange }: TopUpModalProps) {
                   </div>
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Coins className="w-3.5 h-3.5" />
-                    <span>{pkg.credits} 積分</span>
+                    <span>{pkg.credits} 閃幣</span>
                   </div>
                 </div>
                 <Button

@@ -167,7 +167,7 @@ export function PollCard({ poll, onVote, hasVoted = false, isAuthenticated = fal
             {isAuthenticated && canVote && (
               <Badge variant="secondary" className="flex items-center gap-1 text-xs">
                 <Coins className="w-3 h-3" />
-                {VOTE_COST} 積分
+                {VOTE_COST} 閃幣
               </Badge>
             )}
             {hasVoted && (
