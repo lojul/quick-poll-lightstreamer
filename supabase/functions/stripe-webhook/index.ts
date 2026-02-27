@@ -77,19 +77,40 @@ serve(async (req) => {
         );
       }
 
-      // Update payment status to completed
-      const { error: updateError } = await supabase
+      // Check if payment is already completed (prevent double-processing)
+      const { data: existingPayment } = await supabase
+        .from('stripe_payments')
+        .select('status')
+        .eq('id', paymentId)
+        .single();
+
+      if (existingPayment?.status === 'completed') {
+        console.log(`Payment ${paymentId} already completed, skipping`);
+        return new Response(
+          JSON.stringify({ received: true, skipped: true }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Atomically update payment status (only if still pending)
+      const { data: updatedPayment, error: updateError } = await supabase
         .from('stripe_payments')
         .update({
           status: 'completed',
           stripe_payment_intent_id: session.payment_intent as string,
           completed_at: new Date().toISOString(),
         })
-        .eq('id', paymentId);
+        .eq('id', paymentId)
+        .eq('status', 'pending')  // Only update if still pending
+        .select()
+        .single();
 
-      if (updateError) {
-        console.error('Failed to update payment:', updateError);
-        throw new Error(`Failed to update payment: ${updateError.message}`);
+      if (updateError || !updatedPayment) {
+        console.log(`Payment ${paymentId} already processed by another request`);
+        return new Response(
+          JSON.stringify({ received: true, skipped: true }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
       // Add credits to user
