@@ -22,8 +22,8 @@ const PACKAGES = [
   {
     id: 'small',
     credits: 100,
-    price: 'HK$3',
-    priceCents: 300,
+    price: 'HK$4',
+    priceCents: 400,
     label: '入門方案',
     popular: false,
   },

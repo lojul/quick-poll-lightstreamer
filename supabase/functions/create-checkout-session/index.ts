@@ -8,8 +8,9 @@ const corsHeaders = {
 };
 
 // Credit packages configuration (prices in HKD cents)
+// Note: Stripe minimum for HKD is $4.00
 const CREDIT_PACKAGES = {
-  small: { credits: 100, price_cents: 300, name: '100 閃幣' },      // HK$3
+  small: { credits: 100, price_cents: 400, name: '100 閃幣' },      // HK$4
   medium: { credits: 500, price_cents: 1800, name: '500 閃幣' },    // HK$18
   large: { credits: 1200, price_cents: 3800, name: '1200 閃幣 (20% 額外)' }, // HK$38
 } as const;
