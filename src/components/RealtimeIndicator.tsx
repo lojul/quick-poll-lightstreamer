@@ -1,4 +1,4 @@
-import { Wifi, WifiOff, RefreshCw, Zap, Activity } from 'lucide-react';
+import { Wifi, WifiOff, RefreshCw, Activity } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { LightstreamerConnectionStatus } from '@/hooks/useLightstreamerVotes';
 
@@ -23,7 +23,6 @@ export function RealtimeIndicator({ status, lightstreamerStatus, lastUpdate }: R
         text: '高速即時更新',
         className: 'bg-gradient-to-r from-green-500/20 to-purple-500/20 text-green-700 border-green-500/50',
         pulse: false,
-        showZap: true,
         showHeartbeat: true
       };
     }
@@ -33,7 +32,6 @@ export function RealtimeIndicator({ status, lightstreamerStatus, lastUpdate }: R
         text: '連接中...',
         className: 'bg-yellow-500/20 text-yellow-700 border-yellow-500/50',
         pulse: true,
-        showZap: false,
         showHeartbeat: false
       };
     }
@@ -43,7 +41,6 @@ export function RealtimeIndicator({ status, lightstreamerStatus, lastUpdate }: R
         text: '已斷線',
         className: 'bg-red-500/20 text-red-700 border-red-500/50',
         pulse: false,
-        showZap: false,
         showHeartbeat: false
       };
     }
@@ -53,7 +50,6 @@ export function RealtimeIndicator({ status, lightstreamerStatus, lastUpdate }: R
       text: '即時更新',
       className: 'bg-green-500/20 text-green-700 border-green-500/50',
       pulse: false,
-      showZap: false,
       showHeartbeat: false
     };
   };
@@ -101,7 +97,6 @@ export function RealtimeIndicator({ status, lightstreamerStatus, lastUpdate }: R
             </span>
           )}
           {config.icon}
-          {config.showZap && <Zap className="w-3 h-3 ml-1 text-purple-600" />}
           <span className="ml-1.5">{config.text}</span>
         </Badge>
 
