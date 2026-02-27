@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { CreatePoll } from '@/components/CreatePoll';
 import { PollList } from '@/components/PollList';
 import { Button } from '@/components/ui/button';
@@ -436,10 +436,20 @@ const Index = () => {
             />
           )}
         </div>
+
+        {/* Footer */}
+        <footer className="mt-16 pt-8 border-t border-border/40 text-center text-sm text-muted-foreground">
+          <div className="flex justify-center gap-4">
+            <Link to="/terms" className="hover:text-primary transition-colors">
+              服務條款
+            </Link>
+            <span>|</span>
+            <span>© 2026 Quick Polls</span>
+          </div>
+        </footer>
       </div>
     </div>
   );
 };
 
 export default Index;
-// Trigger redeploy Thu Feb 26 21:56:09 HKT 2026
