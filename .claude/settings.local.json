@@ -41,7 +41,8 @@
       "Bash(grep:*)",
       "Bash(tree:*)",
       "Bash(npx supabase:*)",
-      "WebFetch(domain:railway.com)"
+      "WebFetch(domain:railway.com)",
+      "Bash(supabase functions deploy:*)"
     ]
   }
 }

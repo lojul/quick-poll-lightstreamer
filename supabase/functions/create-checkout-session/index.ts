@@ -118,11 +118,11 @@ serve(async (req) => {
     }
 
     // Create Stripe Checkout session
-    // Note: For WeChat Pay and Alipay, currency must be CNY or supported currencies
-    // Using automatic_payment_methods lets Stripe show available methods based on customer location
+    // Note: WeChat Pay requires CNY, Alipay supports limited currencies
+    // For HKD, we use card payments only
     const session = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,
-      payment_method_types: ['card', 'alipay', 'wechat_pay'],
+      payment_method_types: ['card'],
       line_items: [
         {
           price_data: {
@@ -144,12 +144,6 @@ serve(async (req) => {
         payment_id: payment.id,
         credits: selectedPackage.credits.toString(),
         package_type: packageType,
-      },
-      // Required for WeChat Pay
-      payment_method_options: {
-        wechat_pay: {
-          client: 'web',
-        },
       },
     });
 
