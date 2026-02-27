@@ -49,6 +49,20 @@ const PaymentResult = () => {
 
           if (result.credited && result.amount > 0) {
             setCreditedAmount(result.amount);
+          } else {
+            // If verify-payment didn't add credits (webhook did), fetch the recent completed payment
+            const { data: recentPayment } = await supabase
+              .from('stripe_payments')
+              .select('credits_purchased')
+              .eq('user_id', session.user.id)
+              .eq('status', 'completed')
+              .order('completed_at', { ascending: false })
+              .limit(1)
+              .single();
+
+            if (recentPayment?.credits_purchased) {
+              setCreditedAmount(recentPayment.credits_purchased);
+            }
           }
 
           // Refetch credits after verification
@@ -91,20 +105,30 @@ const PaymentResult = () => {
               </div>
             </div>
             <h1 className="text-2xl font-bold text-green-600 mb-2">付款成功！</h1>
-            <p className="text-muted-foreground mb-6">
-              {creditedAmount ? `已增加 ${creditedAmount} 閃幣！` : '閃幣已加入您的帳戶。'}感謝您的購買！
+            <p className="text-muted-foreground mb-4">
+              感謝您的購買！
             </p>
             {isVerifying ? (
-              <div className="flex items-center justify-center gap-2 mb-6 p-4 bg-blue-500/10 rounded-lg">
+              <div className="flex items-center justify-center gap-2 mb-4 p-4 bg-blue-500/10 rounded-lg">
                 <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
                 <span className="text-lg font-semibold">正在處理付款...</span>
               </div>
-            ) : credits !== null ? (
-              <div className="flex items-center justify-center gap-2 mb-6 p-4 bg-yellow-500/10 rounded-lg">
-                <Coins className="w-5 h-5 text-yellow-600" />
-                <span className="text-lg font-semibold">目前餘額: {credits} 閃幣</span>
-              </div>
-            ) : null}
+            ) : (
+              <>
+                {creditedAmount && (
+                  <div className="flex items-center justify-center gap-2 mb-4 p-4 bg-green-500/10 rounded-lg border border-green-500/30">
+                    <Coins className="w-6 h-6 text-green-600" />
+                    <span className="text-xl font-bold text-green-600">+{creditedAmount} 閃幣</span>
+                  </div>
+                )}
+                {credits !== null && (
+                  <div className="flex items-center justify-center gap-2 mb-6 p-4 bg-yellow-500/10 rounded-lg">
+                    <Coins className="w-5 h-5 text-yellow-600" />
+                    <span className="text-lg font-semibold">目前餘額: {credits} 閃幣</span>
+                  </div>
+                )}
+              </>
+            )}
           </>
         ) : isCancelled ? (
           <>
