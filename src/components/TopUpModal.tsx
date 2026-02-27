@@ -59,18 +59,30 @@ export function TopUpModal({ open, onOpenChange }: TopUpModalProps) {
         body: { packageType: packageId },
       });
 
+      // Log full response for debugging
+      console.log('[TopUp] Response:', { data, error });
+
       if (error) {
+        // Try to get more details from the error
+        console.error('[TopUp] Error details:', JSON.stringify(error, null, 2));
         throw new Error(error.message || 'Failed to create checkout session');
+      }
+
+      // Check if data contains an error (Edge Function might return error in data)
+      if (data?.error) {
+        console.error('[TopUp] Edge Function error:', data);
+        throw new Error(data.error + (data.details ? `: ${data.details}` : ''));
       }
 
       // Redirect to Stripe Checkout
       if (data?.url) {
         window.location.href = data.url;
       } else {
+        console.error('[TopUp] No URL in response:', data);
         throw new Error('No checkout URL returned');
       }
     } catch (error) {
-      console.error('Purchase error:', error);
+      console.error('[TopUp] Purchase error:', error);
       toast({
         title: '購買失敗',
         description: error instanceof Error ? error.message : '請稍後重試。',
