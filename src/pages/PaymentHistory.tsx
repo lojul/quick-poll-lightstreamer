@@ -13,9 +13,10 @@ interface Payment {
   amount: number | null;
   currency: string | null;
   status: string;
+  description: string | null;
+  payment_method_type: string | null;
   credits: number | null;
   package_type: string | null;
-  product_name: string | null;
 }
 
 const PaymentHistory = () => {
@@ -87,24 +88,33 @@ const PaymentHistory = () => {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'paid':
+      case 'succeeded':
         return (
           <Badge className="bg-green-500/20 text-green-700 hover:bg-green-500/30">
             <CheckCircle className="w-3 h-3 mr-1" />
-            已付款
+            成功
           </Badge>
         );
-      case 'unpaid':
+      case 'processing':
+        return (
+          <Badge className="bg-blue-500/20 text-blue-700 hover:bg-blue-500/30">
+            <Clock className="w-3 h-3 mr-1" />
+            處理中
+          </Badge>
+        );
+      case 'requires_payment_method':
+      case 'requires_confirmation':
+      case 'requires_action':
         return (
           <Badge className="bg-yellow-500/20 text-yellow-700 hover:bg-yellow-500/30">
             <Clock className="w-3 h-3 mr-1" />
-            待付款
+            待完成
           </Badge>
         );
-      case 'no_payment_required':
+      case 'canceled':
         return (
           <Badge className="bg-gray-500/20 text-gray-700 hover:bg-gray-500/30">
-            免費
+            已取消
           </Badge>
         );
       default:
@@ -114,6 +124,19 @@ const PaymentHistory = () => {
             失敗
           </Badge>
         );
+    }
+  };
+
+  const getPaymentMethodLabel = (method: string | null) => {
+    switch (method) {
+      case 'wechat_pay':
+        return 'WeChat Pay';
+      case 'alipay':
+        return 'Alipay';
+      case 'card':
+        return '信用卡';
+      default:
+        return method || '-';
     }
   };
 
@@ -181,19 +204,25 @@ const PaymentHistory = () => {
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="font-semibold">
-                        {payment.product_name || `${payment.credits} 閃幣`}
+                        {payment.credits ? `${payment.credits} 閃幣` : payment.description || '閃幣購買'}
                       </span>
                       {getStatusBadge(payment.status)}
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {formatDate(payment.created)}
-                    </p>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span>{formatDate(payment.created)}</span>
+                      {payment.payment_method_type && (
+                        <>
+                          <span>•</span>
+                          <span>{getPaymentMethodLabel(payment.payment_method_type)}</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-lg">
                       {formatAmount(payment.amount, payment.currency)}
                     </p>
-                    {payment.credits && payment.status === 'paid' && (
+                    {payment.credits && payment.status === 'succeeded' && (
                       <p className="text-sm text-green-600 flex items-center justify-end gap-1">
                         <Coins className="w-3 h-3" />
                         +{payment.credits} 閃幣

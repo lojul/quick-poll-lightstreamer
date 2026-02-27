@@ -67,23 +67,23 @@ serve(async (req) => {
       );
     }
 
-    // Fetch checkout sessions from Stripe for this customer
-    const sessions = await stripe.checkout.sessions.list({
+    // Fetch payment intents from Stripe for this customer (actual transactions)
+    const paymentIntents = await stripe.paymentIntents.list({
       customer: profile.stripe_customer_id,
       limit: 50,
-      expand: ['data.line_items'],
     });
 
     // Transform to payment history format
-    const payments = sessions.data.map((session) => ({
-      id: session.id,
-      created: session.created,
-      amount: session.amount_total,
-      currency: session.currency,
-      status: session.payment_status,
-      credits: session.metadata?.credits ? parseInt(session.metadata.credits) : null,
-      package_type: session.metadata?.package_type || null,
-      product_name: session.line_items?.data[0]?.description || null,
+    const payments = paymentIntents.data.map((pi) => ({
+      id: pi.id,
+      created: pi.created,
+      amount: pi.amount,
+      currency: pi.currency,
+      status: pi.status, // requires_payment_method, requires_confirmation, requires_action, processing, requires_capture, canceled, succeeded
+      description: pi.description,
+      payment_method_type: pi.payment_method_types?.[0] || null,
+      credits: pi.metadata?.credits ? parseInt(pi.metadata.credits) : null,
+      package_type: pi.metadata?.package_type || null,
     }));
 
     return new Response(

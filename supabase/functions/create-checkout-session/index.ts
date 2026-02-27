@@ -145,6 +145,15 @@ serve(async (req) => {
         credits: selectedPackage.credits.toString(),
         package_type: packageType,
       },
+      // Pass metadata to the PaymentIntent so it shows in payment history
+      payment_intent_data: {
+        metadata: {
+          credits: selectedPackage.credits.toString(),
+          package_type: packageType,
+          supabase_user_id: user.id,
+        },
+        description: `購買 ${selectedPackage.credits} 閃幣`,
+      },
       payment_method_options: {
         wechat_pay: {
           client: 'web',
