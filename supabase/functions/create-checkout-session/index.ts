@@ -137,8 +137,8 @@ serve(async (req) => {
         },
       ],
       mode: 'payment',
-      success_url: `${frontendUrl}?payment=success`,
-      cancel_url: `${frontendUrl}?payment=cancelled`,
+      success_url: `${frontendUrl}/payment?payment=success`,
+      cancel_url: `${frontendUrl}/payment?payment=cancelled`,
       metadata: {
         supabase_user_id: user.id,
         payment_id: payment.id,

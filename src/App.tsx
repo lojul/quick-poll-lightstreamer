@@ -7,6 +7,8 @@ import { HelmetProvider } from "react-helmet-async";
 import { SEO } from "@/components/SEO";
 import Index from "./pages/Index";
 import Terms from "./pages/Terms";
+import PaymentResult from "./pages/PaymentResult";
+import PaymentHistory from "./pages/PaymentHistory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +24,8 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/terms" element={<Terms />} />
+            <Route path="/payment" element={<PaymentResult />} />
+            <Route path="/payment-history" element={<PaymentHistory />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

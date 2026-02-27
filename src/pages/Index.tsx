@@ -380,6 +380,15 @@ const Index = () => {
                   loading={creditsLoading}
                   onClick={() => setShowTopUpModal(true)}
                 />
+                <Link to="/payment-history">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-primary"
+                  >
+                    付款記錄
+                  </Button>
+                </Link>
                 <Button
                   variant="ghost"
                   size="sm"
