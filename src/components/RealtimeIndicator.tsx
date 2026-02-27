@@ -23,7 +23,8 @@ export function RealtimeIndicator({ status, lightstreamerStatus, lastUpdate }: R
         text: '高速即時更新',
         className: 'bg-gradient-to-r from-green-500/20 to-purple-500/20 text-green-700 border-green-500/50',
         pulse: false,
-        showZap: true
+        showZap: true,
+        showHeartbeat: true
       };
     }
     if (anyConnecting) {
@@ -32,7 +33,8 @@ export function RealtimeIndicator({ status, lightstreamerStatus, lastUpdate }: R
         text: '連接中...',
         className: 'bg-yellow-500/20 text-yellow-700 border-yellow-500/50',
         pulse: true,
-        showZap: false
+        showZap: false,
+        showHeartbeat: false
       };
     }
     if (bothDisconnected) {
@@ -41,7 +43,8 @@ export function RealtimeIndicator({ status, lightstreamerStatus, lastUpdate }: R
         text: '已斷線',
         className: 'bg-red-500/20 text-red-700 border-red-500/50',
         pulse: false,
-        showZap: false
+        showZap: false,
+        showHeartbeat: false
       };
     }
     // Partial connection
@@ -50,7 +53,8 @@ export function RealtimeIndicator({ status, lightstreamerStatus, lastUpdate }: R
       text: '即時更新',
       className: 'bg-green-500/20 text-green-700 border-green-500/50',
       pulse: false,
-      showZap: false
+      showZap: false,
+      showHeartbeat: false
     };
   };
 
@@ -90,6 +94,12 @@ export function RealtimeIndicator({ status, lightstreamerStatus, lastUpdate }: R
           variant="outline"
           className={`${config.className} ${config.pulse ? 'animate-pulse' : ''} px-3 py-1`}
         >
+          {config.showHeartbeat && (
+            <span className="relative flex h-2.5 w-2.5 mr-1.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+            </span>
+          )}
           {config.icon}
           {config.showZap && <Zap className="w-3 h-3 ml-1 text-purple-600" />}
           <span className="ml-1.5">{config.text}</span>

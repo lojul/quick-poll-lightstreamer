@@ -5,6 +5,7 @@ import {
   subscribe,
   unsubscribe,
   isLightstreamerEnabled,
+  getConnectionStatus,
   type Subscription,
 } from "@/integrations/lightstreamer/client";
 
@@ -23,16 +24,42 @@ export interface UseLightstreamerVisitorsReturn {
  */
 export function useLightstreamerVisitors(): UseLightstreamerVisitorsReturn {
   const [visitorCount, setVisitorCount] = useState(0);
+  const [isConnected, setIsConnected] = useState(false);
   const visitorSubRef = useRef<Subscription | null>(null);
   const countSubRef = useRef<Subscription | null>(null);
+  const hasSubscribed = useRef(false);
 
+  // Poll for connection status (client is connected by useLightstreamerVotes)
   useEffect(() => {
     if (!isLightstreamerEnabled()) {
       return;
     }
 
+    // Check initial status
+    const initialStatus = getConnectionStatus();
+    if (initialStatus === "CONNECTED") {
+      setIsConnected(true);
+    }
+
+    // Poll for connection status changes
+    const interval = setInterval(() => {
+      const status = getConnectionStatus();
+      setIsConnected(status === "CONNECTED");
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Subscribe only after connected
+  useEffect(() => {
+    if (!isLightstreamerEnabled() || !isConnected || hasSubscribed.current) {
+      return;
+    }
+
     const client = getLightstreamerClient();
     if (!client) return;
+
+    hasSubscribed.current = true;
 
     // Create subscriptions for visitor tracking
     console.log("[Visitors] Creating subscriptions...");
@@ -43,11 +70,15 @@ export function useLightstreamerVisitors(): UseLightstreamerVisitorsReturn {
       onItemUpdate: (update) => {
         const countStr = update.getValue("count");
         console.log("[Visitors] Received count update:", countStr);
-        if (countStr !== null) {
+        if (countStr !== null && countStr !== "") {
           const count = parseInt(countStr, 10);
           if (!isNaN(count)) {
-            setVisitorCount(count);
+            // Ensure at least 1 (the current user)
+            setVisitorCount(Math.max(count, 1));
           }
+        } else {
+          // If null/empty, at least show 1 (current user is online)
+          setVisitorCount(1);
         }
       },
       onSubscription: () => {
@@ -62,6 +93,8 @@ export function useLightstreamerVisitors(): UseLightstreamerVisitorsReturn {
     visitorSub.addListener({
       onSubscription: () => {
         console.log("[Visitors] Visitor registered:", visitorId);
+        // When we're registered, we know at least 1 user is online (us)
+        setVisitorCount((prev) => Math.max(prev, 1));
       },
       onSubscriptionError: (code, message) => {
         console.error(`[Visitors] Visitor subscription error ${code}: ${message}`);
@@ -85,8 +118,9 @@ export function useLightstreamerVisitors(): UseLightstreamerVisitorsReturn {
         unsubscribe(countSubRef.current);
         countSubRef.current = null;
       }
+      hasSubscribed.current = false;
     };
-  }, []);
+  }, [isConnected]);
 
   return {
     visitorCount,

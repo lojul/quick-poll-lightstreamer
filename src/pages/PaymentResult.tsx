@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { CheckCircle, XCircle, ArrowLeft, Coins } from 'lucide-react';
+import { CheckCircle, XCircle, ArrowLeft, Coins, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useCredits } from '@/hooks/useCredits';
+import { supabase } from '@/integrations/supabase/client';
 
 const PaymentResult = () => {
   const [searchParams] = useSearchParams();
@@ -11,15 +12,57 @@ const PaymentResult = () => {
   const isSuccess = payment === 'success';
   const isCancelled = payment === 'cancelled';
   const { credits, refetch } = useCredits();
-  const [hasRefetched, setHasRefetched] = useState(false);
+  const [hasVerified, setHasVerified] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [creditedAmount, setCreditedAmount] = useState<number | null>(null);
 
-  // Refetch credits on success
+  // Verify payment and add credits on success
   useEffect(() => {
-    if (isSuccess && !hasRefetched) {
-      refetch();
-      setHasRefetched(true);
+    if (isSuccess && !hasVerified) {
+      setHasVerified(true);
+      setIsVerifying(true);
+
+      const verifyPayment = async () => {
+        try {
+          // Get auth token
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) {
+            console.error('No session found');
+            setIsVerifying(false);
+            return;
+          }
+
+          // Call verify-payment edge function
+          const response = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-payment`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`,
+              },
+            }
+          );
+
+          const result = await response.json();
+          console.log('Verify payment result:', result);
+
+          if (result.credited && result.amount > 0) {
+            setCreditedAmount(result.amount);
+          }
+
+          // Refetch credits after verification
+          await refetch();
+        } catch (error) {
+          console.error('Error verifying payment:', error);
+        } finally {
+          setIsVerifying(false);
+        }
+      };
+
+      verifyPayment();
     }
-  }, [isSuccess, hasRefetched, refetch]);
+  }, [isSuccess, hasVerified, refetch]);
 
   if (!payment) {
     return (
@@ -49,14 +92,19 @@ const PaymentResult = () => {
             </div>
             <h1 className="text-2xl font-bold text-green-600 mb-2">付款成功！</h1>
             <p className="text-muted-foreground mb-6">
-              閃幣已加入您的帳戶。感謝您的購買！
+              {creditedAmount ? `已增加 ${creditedAmount} 閃幣！` : '閃幣已加入您的帳戶。'}感謝您的購買！
             </p>
-            {credits !== null && (
+            {isVerifying ? (
+              <div className="flex items-center justify-center gap-2 mb-6 p-4 bg-blue-500/10 rounded-lg">
+                <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+                <span className="text-lg font-semibold">正在處理付款...</span>
+              </div>
+            ) : credits !== null ? (
               <div className="flex items-center justify-center gap-2 mb-6 p-4 bg-yellow-500/10 rounded-lg">
                 <Coins className="w-5 h-5 text-yellow-600" />
                 <span className="text-lg font-semibold">目前餘額: {credits} 閃幣</span>
               </div>
-            )}
+            ) : null}
           </>
         ) : isCancelled ? (
           <>

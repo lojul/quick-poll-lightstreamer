@@ -129,6 +129,20 @@ export function isLightstreamerEnabled(): boolean {
 }
 
 /**
+ * Get current connection status
+ */
+export function getConnectionStatus(): ConnectionStatus {
+  const client = getLightstreamerClient();
+  if (!client) return "DISCONNECTED";
+
+  const status = client.getStatus();
+  if (status.startsWith("CONNECTED")) return "CONNECTED";
+  if (status.startsWith("CONNECTING") || status === "STALLED") return "CONNECTING";
+  if (status.includes("WILL-RETRY")) return "CONNECTING";
+  return "DISCONNECTED";
+}
+
+/**
  * Create a subscription for concurrent visitor count
  * Uses a unique visitor ID so each browser is counted separately
  */
