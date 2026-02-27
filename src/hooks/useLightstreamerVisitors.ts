@@ -73,12 +73,8 @@ export function useLightstreamerVisitors(): UseLightstreamerVisitorsReturn {
         if (countStr !== null && countStr !== "") {
           const count = parseInt(countStr, 10);
           if (!isNaN(count)) {
-            // Ensure at least 1 (the current user)
-            setVisitorCount(Math.max(count, 1));
+            setVisitorCount(count);
           }
-        } else {
-          // If null/empty, at least show 1 (current user is online)
-          setVisitorCount(1);
         }
       },
       onSubscription: () => {
@@ -93,8 +89,6 @@ export function useLightstreamerVisitors(): UseLightstreamerVisitorsReturn {
     visitorSub.addListener({
       onSubscription: () => {
         console.log("[Visitors] Visitor registered:", visitorId);
-        // When we're registered, we know at least 1 user is online (us)
-        setVisitorCount((prev) => Math.max(prev, 1));
       },
       onSubscriptionError: (code, message) => {
         console.error(`[Visitors] Visitor subscription error ${code}: ${message}`);
