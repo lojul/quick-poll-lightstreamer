@@ -54,40 +54,20 @@ export function TopUpModal({ open, onOpenChange }: TopUpModalProps) {
     try {
       setLoading(packageId);
 
-      // Get the current session
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast({
-          title: '請先登入',
-          description: '您需要登入才能購買積分。',
-          variant: 'destructive',
-        });
-        return;
-      }
+      // Call the Edge Function using Supabase client (handles auth automatically)
+      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+        body: { packageType: packageId },
+      });
 
-      // Call the Edge Function
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ packageType: packageId }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to create checkout session');
+      if (error) {
+        throw new Error(error.message || 'Failed to create checkout session');
       }
 
       // Redirect to Stripe Checkout
-      if (data.url) {
+      if (data?.url) {
         window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL returned');
       }
     } catch (error) {
       console.error('Purchase error:', error);
