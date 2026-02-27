@@ -118,11 +118,10 @@ serve(async (req) => {
     }
 
     // Create Stripe Checkout session
-    // Note: WeChat Pay requires CNY, Alipay supports limited currencies
-    // For HKD, we use card payments only
+    // HKD is supported by Alipay and WeChat Pay
     const session = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,
-      payment_method_types: ['card'],
+      payment_method_types: ['card', 'alipay', 'wechat_pay'],
       line_items: [
         {
           price_data: {
@@ -145,6 +144,11 @@ serve(async (req) => {
         credits: selectedPackage.credits.toString(),
         package_type: packageType,
       },
+      payment_method_options: {
+        wechat_pay: {
+          client: 'web',
+        },
+      },
     });
 
     // Update payment record with session ID
@@ -160,8 +164,15 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error creating checkout session:', error);
+    // Include more error details for debugging
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorDetails = error?.raw?.message || error?.code || '';
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({
+        error: errorMessage,
+        details: errorDetails,
+        type: error?.type || 'unknown'
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
