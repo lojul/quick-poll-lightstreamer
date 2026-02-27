@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Coins, CheckCircle, XCircle, Clock, Loader2, CreditCard } from 'lucide-react';
+import { ArrowLeft, Coins, CheckCircle, XCircle, Clock, Loader2, CreditCard, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { TopUpModal } from '@/components/TopUpModal';
 
 interface Payment {
   id: string;
@@ -24,6 +25,7 @@ const PaymentHistory = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showTopUpModal, setShowTopUpModal] = useState(false);
 
   useEffect(() => {
     const fetchPayments = async () => {
@@ -160,18 +162,27 @@ const PaymentHistory = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+      {/* Top Up Modal */}
+      <TopUpModal open={showTopUpModal} onOpenChange={setShowTopUpModal} />
+
       <div className="container mx-auto px-4 py-8 max-w-3xl">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <Link to="/">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold">付款記錄</h1>
-            <p className="text-muted-foreground text-sm">{user?.email}</p>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <Link to="/">
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold">付款記錄</h1>
+              <p className="text-muted-foreground text-sm">{user?.email}</p>
+            </div>
           </div>
+          <Button onClick={() => setShowTopUpModal(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            購買閃幣
+          </Button>
         </div>
 
         {/* Content */}
@@ -189,12 +200,10 @@ const PaymentHistory = () => {
             <CreditCard className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
             <h2 className="text-lg font-semibold mb-2">尚無付款記錄</h2>
             <p className="text-muted-foreground mb-4">您還沒有購買過閃幣</p>
-            <Link to="/">
-              <Button>
-                <Coins className="w-4 h-4 mr-2" />
-                購買閃幣
-              </Button>
-            </Link>
+            <Button onClick={() => setShowTopUpModal(true)}>
+              <Coins className="w-4 h-4 mr-2" />
+              購買閃幣
+            </Button>
           </Card>
         ) : (
           <div className="space-y-4">
