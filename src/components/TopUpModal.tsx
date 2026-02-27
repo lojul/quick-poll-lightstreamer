@@ -54,23 +54,31 @@ export function TopUpModal({ open, onOpenChange }: TopUpModalProps) {
     try {
       setLoading(packageId);
 
-      // Call the Edge Function using Supabase client (handles auth automatically)
-      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-        body: { packageType: packageId },
-      });
-
-      // Log full response for debugging
-      console.log('[TopUp] Response:', { data, error });
-
-      if (error) {
-        // Try to get more details from the error
-        console.error('[TopUp] Error details:', JSON.stringify(error, null, 2));
-        throw new Error(error.message || 'Failed to create checkout session');
+      // Get auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Please log in first');
       }
 
-      // Check if data contains an error (Edge Function might return error in data)
-      if (data?.error) {
-        console.error('[TopUp] Edge Function error:', data);
+      // Call Edge Function directly with fetch to get full error response
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ packageType: packageId }),
+        }
+      );
+
+      const data = await response.json();
+      console.log('[TopUp] Response:', { status: response.status, data });
+
+      if (!response.ok) {
+        console.error('[TopUp] Error response:', data);
         throw new Error(data.error + (data.details ? `: ${data.details}` : ''));
       }
 
