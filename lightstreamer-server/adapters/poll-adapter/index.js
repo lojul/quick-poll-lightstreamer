@@ -37,9 +37,11 @@ const subscribedItems = new Map(); // itemName -> { optionId, isActive }
 // Current vote counts cache
 const voteCounts = new Map(); // optionId -> vote_count
 
-// Track concurrent visitors (unique visitor subscriptions)
-const visitorItems = new Set(); // Set of visitor_* item names
+// Track concurrent visitors with timestamps for timeout cleanup
+const visitorItems = new Map(); // itemName -> { lastSeen: timestamp }
 const VISITOR_COUNT_ITEM = "visitors_count";
+const VISITOR_TIMEOUT_MS = 60000; // 60 seconds timeout
+const VISITOR_CLEANUP_INTERVAL_MS = 15000; // Check every 15 seconds
 
 // Data provider instance
 let dataProvider = null;
@@ -82,7 +84,7 @@ function initDataProvider() {
         // Handle individual visitor subscription (visitor_<uuid>)
         if (itemName.startsWith("visitor_")) {
           subscribedItems.set(itemName, { isActive: true, isVisitorItem: true });
-          visitorItems.add(itemName);
+          visitorItems.set(itemName, { lastSeen: Date.now() });
           response.success();
 
           // Send snapshot (just a ping acknowledgment)
@@ -156,7 +158,7 @@ function initDataProvider() {
           subscribedItems.delete(itemName);
 
           // Remove from visitor tracking if this was a visitor subscription
-          if (item?.isVisitorItem && visitorItems.has(itemName)) {
+          if (item?.isVisitorItem) {
             visitorItems.delete(itemName);
             broadcastVisitorCount();
             console.log(`[Adapter] Visitor disconnected: ${itemName}. Total: ${visitorItems.size}`);
@@ -193,6 +195,37 @@ function broadcastVisitorCount() {
       // Ignore errors if item not subscribed
     }
   }
+}
+
+/**
+ * Clean up stale visitors that have timed out
+ * Removes visitors that haven't been seen within VISITOR_TIMEOUT_MS
+ */
+let visitorCleanupInterval = null;
+
+function startVisitorCleanup() {
+  if (visitorCleanupInterval) return;
+
+  visitorCleanupInterval = setInterval(() => {
+    const now = Date.now();
+    let removed = 0;
+
+    for (const [itemName, data] of visitorItems.entries()) {
+      if (now - data.lastSeen > VISITOR_TIMEOUT_MS) {
+        visitorItems.delete(itemName);
+        subscribedItems.delete(itemName);
+        removed++;
+        console.log(`[Cleanup] Removed stale visitor: ${itemName}`);
+      }
+    }
+
+    if (removed > 0) {
+      broadcastVisitorCount();
+      console.log(`[Cleanup] Removed ${removed} stale visitors. Total: ${visitorItems.size}`);
+    }
+  }, VISITOR_CLEANUP_INTERVAL_MS);
+
+  console.log(`[Cleanup] Started visitor cleanup (timeout: ${VISITOR_TIMEOUT_MS / 1000}s, interval: ${VISITOR_CLEANUP_INTERVAL_MS / 1000}s)`);
 }
 
 /**
@@ -295,6 +328,9 @@ async function main() {
 
   // Start polling to detect vote changes (primary mechanism, no Supabase Realtime)
   startPolling();
+
+  // Start visitor cleanup to remove stale connections
+  startVisitorCleanup();
 
   console.log("[Adapter] Poll Vote Adapter is running");
 
