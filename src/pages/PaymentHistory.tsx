@@ -108,7 +108,7 @@ const PaymentHistory = () => {
         return (
           <Badge className="bg-yellow-500/20 text-yellow-700 hover:bg-yellow-500/30">
             <Clock className="w-3 h-3 mr-1" />
-            待完成
+            未完成
           </Badge>
         );
       case 'canceled':
