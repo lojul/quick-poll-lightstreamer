@@ -50,14 +50,14 @@ serve(async (req) => {
       );
     }
 
-    // Find pending payments for this user
+    // Find the most recent pending payment for this user (only 1)
     const { data: pendingPayments, error: fetchError } = await supabase
       .from('stripe_payments')
       .select('*')
       .eq('user_id', user.id)
       .eq('status', 'pending')
       .order('created_at', { ascending: false })
-      .limit(5);
+      .limit(1);  // Only process the most recent one
 
     if (fetchError) {
       throw new Error(`Failed to fetch payments: ${fetchError.message}`);
