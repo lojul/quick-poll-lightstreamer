@@ -7,11 +7,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Credit packages configuration
+// Credit packages configuration (prices in HKD cents)
 const CREDIT_PACKAGES = {
-  small: { credits: 100, price_cents: 100, name: '100 Credits' },
-  medium: { credits: 500, price_cents: 500, name: '500 Credits' },
-  large: { credits: 1200, price_cents: 1000, name: '1200 Credits (20% Bonus)' },
+  small: { credits: 100, price_cents: 800, name: '100 積分' },      // HK$8
+  medium: { credits: 500, price_cents: 3800, name: '500 積分' },    // HK$38
+  large: { credits: 1200, price_cents: 7800, name: '1200 積分 (20% 額外)' }, // HK$78
 } as const;
 
 type PackageType = keyof typeof CREDIT_PACKAGES;
@@ -118,16 +118,18 @@ serve(async (req) => {
     }
 
     // Create Stripe Checkout session
+    // Note: For WeChat Pay and Alipay, currency must be CNY or supported currencies
+    // Using automatic_payment_methods lets Stripe show available methods based on customer location
     const session = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,
-      payment_method_types: ['card'],
+      payment_method_types: ['card', 'alipay', 'wechat_pay'],
       line_items: [
         {
           price_data: {
-            currency: 'usd',
+            currency: 'hkd',
             product_data: {
               name: selectedPackage.name,
-              description: `Purchase ${selectedPackage.credits} credits for Quick Polls`,
+              description: `購買 ${selectedPackage.credits} 積分`,
             },
             unit_amount: selectedPackage.price_cents,
           },
@@ -142,6 +144,12 @@ serve(async (req) => {
         payment_id: payment.id,
         credits: selectedPackage.credits.toString(),
         package_type: packageType,
+      },
+      // Required for WeChat Pay
+      payment_method_options: {
+        wechat_pay: {
+          client: 'web',
+        },
       },
     });
 
