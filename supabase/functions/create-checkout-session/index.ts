@@ -25,7 +25,7 @@ serve(async (req) => {
   try {
     // Get environment variables
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
-    const frontendUrl = Deno.env.get('FRONTEND_URL') || 'https://quick-poll-lightstreamer-production.up.railway.app';
+    const frontendUrl = Deno.env.get('FRONTEND_URL') || 'https://quick-poll.up.railway.app';
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
