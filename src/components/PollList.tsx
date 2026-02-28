@@ -25,7 +25,7 @@ export function PollList({ polls, onVote, votedPolls, isAuthenticated = false, f
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
-        最近的投票
+        進行中的投票
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {polls.map((poll) => (

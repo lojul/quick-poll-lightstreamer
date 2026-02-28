@@ -4,7 +4,8 @@ import { CreatePoll } from '@/components/CreatePoll';
 import { PollList } from '@/components/PollList';
 import { Button } from '@/components/ui/button';
 import { CreatePollData } from '@/types/poll';
-import { PlusCircle, Vote, LogIn, LogOut, User, Users } from 'lucide-react';
+import { PlusCircle, Vote, LogIn, LogOut, User, Users, Archive } from 'lucide-react';
+import { isPast } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useRealtimePolls, getAllOptionIds, mergeVoteUpdates } from '@/hooks/useRealtimePolls';
 import { useLightstreamerVotes } from '@/hooks/useLightstreamerVotes';
@@ -123,12 +124,28 @@ const Index = () => {
   }, [basePolls, lightstreamerEnabled, setOptionIds]);
 
   // Merge Lightstreamer vote updates into polls
-  const polls = useMemo(() => {
+  const allPolls = useMemo(() => {
     if (!lightstreamerEnabled || voteUpdates.size === 0) {
       return basePolls;
     }
     return mergeVoteUpdates(basePolls, voteUpdates);
   }, [basePolls, voteUpdates, lightstreamerEnabled]);
+
+  // Filter active polls (not expired) for main page
+  const { activePolls: polls, expiredCount } = useMemo(() => {
+    const active: typeof allPolls = [];
+    let expired = 0;
+
+    for (const poll of allPolls) {
+      if (poll.deadline && isPast(new Date(poll.deadline))) {
+        expired++;
+      } else {
+        active.push(poll);
+      }
+    }
+
+    return { activePolls: active, expiredCount: expired };
+  }, [allPolls]);
 
   // Calculate total votes from merged polls
   const displayTotalVotes = useMemo(() => {
@@ -161,12 +178,13 @@ const Index = () => {
     }
 
     try {
-      // Create poll with created_by
+      // Create poll with created_by and deadline
       const { data: poll, error: pollError } = await supabase
         .from('polls')
         .insert({
           question: pollData.question,
           created_by: user?.id,
+          deadline: pollData.deadline?.toISOString(),
         })
         .select()
         .single();
@@ -347,11 +365,11 @@ const Index = () => {
 
           {/* Stats display */}
           <div className="flex flex-wrap justify-center gap-4 mb-4">
-            {/* Total polls count */}
+            {/* Active polls count */}
             <div className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
               <Vote className="w-4 h-4 mr-2 text-primary" />
               <span className="text-sm font-medium text-primary">
-                總共 {polls.length} 個投票
+                {polls.length} 個進行中
               </span>
             </div>
 
@@ -370,6 +388,18 @@ const Index = () => {
                 {visitorCount} 人在線
               </span>
             </div>
+
+            {/* Expired polls link */}
+            {expiredCount > 0 && (
+              <Link to="/expired">
+                <div className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-gray-500/10 border border-gray-500/20 hover:bg-gray-500/20 transition-colors cursor-pointer">
+                  <Archive className="w-4 h-4 mr-2 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-500">
+                    {expiredCount} 個已截止
+                  </span>
+                </div>
+              </Link>
+            )}
           </div>
 
           {/* Real-time connection status - Centered */}

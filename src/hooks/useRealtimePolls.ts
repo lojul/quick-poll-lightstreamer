@@ -67,6 +67,7 @@ export const useRealtimePolls = () => {
           id,
           question,
           created_at,
+          deadline,
           poll_options (
             id,
             text,
