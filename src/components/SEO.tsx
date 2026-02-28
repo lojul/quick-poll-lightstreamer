@@ -12,18 +12,18 @@ interface SEOProps {
 }
 
 export function SEO({
-  title = "快速投票 | Quick Polls - 即時投票平台",
+  title = "貓爪達人投票社 | CatPawVote - 即時投票平台",
   description = "建立即時投票，收集意見反饋。支援中英文，即時更新結果，簡單易用的投票平台。Create instant polls, collect feedback with real-time updates.",
-  keywords = "投票, 民意調查, 即時投票, 線上投票, 快速投票, 意見收集, poll, voting, survey, quick polls, real-time voting, 中文投票, 英文投票",
-  image = "/placeholder.svg",
-  url = "https://quick-polls.vercel.app/",
+  keywords = "投票, 民意調查, 即時投票, 線上投票, 貓爪投票, 意見收集, poll, voting, survey, catpaw vote, real-time voting, 中文投票, 英文投票",
+  image = "/favicon.svg",
+  url = "https://quick-poll.up.railway.app/",
   type = "website",
   pollQuestion,
   pollVotes
 }: SEOProps) {
   // Dynamic title based on context
-  const dynamicTitle = pollQuestion 
-    ? `${pollQuestion} | 快速投票 | Quick Polls`
+  const dynamicTitle = pollQuestion
+    ? `${pollQuestion} | 貓爪達人投票社 | CatPawVote`
     : title;
 
   // Dynamic description based on context
@@ -43,11 +43,11 @@ export function SEO({
     "dateModified": new Date().toISOString(),
     "author": {
       "@type": "Organization",
-      "name": "Quick Polls Team"
+      "name": "CatPawVote Team"
     },
     "publisher": {
       "@type": "Organization",
-      "name": "Quick Polls",
+      "name": "CatPawVote",
       "logo": {
         "@type": "ImageObject",
         "url": "/favicon.svg"
@@ -63,7 +63,7 @@ export function SEO({
     },
     "featureList": [
       "即時投票建立",
-      "即時結果更新", 
+      "即時結果更新",
       "中英文支援",
       "響應式設計",
       "圖表視覺化"
@@ -89,7 +89,7 @@ export function SEO({
       <meta name="robots" content="index, follow" />
       <meta name="language" content="Chinese, English" />
       <meta name="revisit-after" content="7 days" />
-      
+
       {/* Open Graph / Facebook */}
       <meta property="og:type" content={type} />
       <meta property="og:url" content={url} />
@@ -98,30 +98,30 @@ export function SEO({
       <meta property="og:image" content={image} />
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
-      <meta property="og:image:alt" content="快速投票平台 - 即時投票結果展示" />
-      <meta property="og:site_name" content="Quick Polls" />
+      <meta property="og:image:alt" content="貓爪達人投票社 - 即時投票結果展示" />
+      <meta property="og:site_name" content="CatPawVote" />
       <meta property="og:locale" content="zh_TW" />
       <meta property="og:locale:alternate" content="en_US" />
-      
+
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:url" content={url} />
       <meta name="twitter:title" content={dynamicTitle} />
       <meta name="twitter:description" content={dynamicDescription} />
       <meta name="twitter:image" content={image} />
-      <meta name="twitter:image:alt" content="快速投票平台 - 即時投票結果展示" />
-      
+      <meta name="twitter:image:alt" content="貓爪達人投票社 - 即時投票結果展示" />
+
       {/* Additional SEO Meta Tags */}
-      <meta name="theme-color" content="#3b82f6" />
-      <meta name="msapplication-TileColor" content="#3b82f6" />
+      <meta name="theme-color" content="#9333ea" />
+      <meta name="msapplication-TileColor" content="#9333ea" />
       <meta name="apple-mobile-web-app-capable" content="yes" />
       <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-      <meta name="apple-mobile-web-app-title" content="Quick Polls" />
-      <meta name="application-name" content="Quick Polls" />
-      
+      <meta name="apple-mobile-web-app-title" content="CatPawVote" />
+      <meta name="application-name" content="CatPawVote" />
+
       {/* Canonical URL */}
       <link rel="canonical" href={url} />
-      
+
       {/* Structured Data */}
       <script type="application/ld+json">
         {JSON.stringify(structuredData)}

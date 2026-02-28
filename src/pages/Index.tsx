@@ -81,7 +81,7 @@ const Index = () => {
     if (payment === 'success') {
       toast({
         title: '付款成功！',
-        description: '閃幣已加入您的帳戶。',
+        description: '貓爪幣已加入您的帳戶。',
       });
       refetchCredits();
       // Remove the query param
@@ -198,7 +198,7 @@ const Index = () => {
         await supabase.from('polls').delete().eq('id', poll.id);
         toast({
           title: "錯誤",
-          description: "扣除閃幣失敗，請重試。",
+          description: "扣除貓爪幣失敗，請重試。",
           variant: "destructive"
         });
         return;
@@ -220,7 +220,7 @@ const Index = () => {
       // Real-time updates will handle the new poll automatically
       toast({
         title: "投票已建立！",
-        description: `您的投票現在已上線。已扣除 ${POLL_COST} 閃幣。`,
+        description: `您的投票現在已上線。已扣除 ${POLL_COST} 貓爪幣。`,
       });
     } catch (error) {
       console.error('Error creating poll:', error);
@@ -321,7 +321,7 @@ const Index = () => {
       // Vote successful - already marked in votedPolls at the start
       toast({
         title: "投票已記錄！",
-        description: `感謝您參與投票。已扣除 ${VOTE_COST} 閃幣。`,
+        description: `感謝您參與投票。已扣除 ${VOTE_COST} 貓爪幣。`,
       });
     } catch (error) {
       console.error('[Vote] Error:', error);
@@ -375,7 +375,7 @@ const Index = () => {
             <Vote className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary via-purple-500 to-purple-600 bg-clip-text text-transparent">
-            快速投票
+            貓爪達人投票社
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-4">
             立即建立投票並收集任何人的意見。簡單、快速且美觀。
@@ -523,7 +523,7 @@ const Index = () => {
               服務條款
             </Link>
             <span>|</span>
-            <span>© 2026 Quick Polls</span>
+            <span>© 2026 CatPawVote</span>
           </div>
         </footer>
       </div>

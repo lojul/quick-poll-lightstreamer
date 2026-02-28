@@ -86,7 +86,7 @@ const ExpiredPolls = () => {
               服務條款
             </Link>
             <span>|</span>
-            <span>© 2026 Quick Polls</span>
+            <span>© 2026 CatPawVote</span>
           </div>
         </footer>
       </div>

@@ -118,7 +118,7 @@ const PaymentResult = () => {
                 {creditedAmount && (
                   <div className="flex items-center justify-center gap-2 mb-6 p-4 bg-green-500/10 rounded-lg border border-green-500/30">
                     <Coins className="w-6 h-6 text-green-600" />
-                    <span className="text-xl font-bold text-green-600">+{creditedAmount} 閃幣</span>
+                    <span className="text-xl font-bold text-green-600">+{creditedAmount} 貓爪幣</span>
                   </div>
                 )}
               </>
@@ -133,7 +133,7 @@ const PaymentResult = () => {
             </div>
             <h1 className="text-2xl font-bold text-yellow-600 mb-2">付款已取消</h1>
             <p className="text-muted-foreground mb-6">
-              您已取消付款流程。如需購買閃幣，請重新嘗試。
+              您已取消付款流程。如需購買貓爪幣，請重新嘗試。
             </p>
           </>
         ) : (

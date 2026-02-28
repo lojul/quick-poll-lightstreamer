@@ -181,7 +181,7 @@ const PaymentHistory = () => {
           </div>
           <Button onClick={() => setShowTopUpModal(true)}>
             <Plus className="w-4 h-4 mr-2" />
-            購買閃幣
+            購買貓爪幣
           </Button>
         </div>
 
@@ -199,10 +199,10 @@ const PaymentHistory = () => {
           <Card className="p-8 text-center">
             <CreditCard className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
             <h2 className="text-lg font-semibold mb-2">尚無付款記錄</h2>
-            <p className="text-muted-foreground mb-4">您還沒有購買過閃幣</p>
+            <p className="text-muted-foreground mb-4">您還沒有購買過貓爪幣</p>
             <Button onClick={() => setShowTopUpModal(true)}>
               <Coins className="w-4 h-4 mr-2" />
-              購買閃幣
+              購買貓爪幣
             </Button>
           </Card>
         ) : (
@@ -213,7 +213,7 @@ const PaymentHistory = () => {
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="font-semibold">
-                        {payment.credits ? `${payment.credits} 閃幣` : payment.description || '閃幣購買'}
+                        {payment.credits ? `${payment.credits} 貓爪幣` : payment.description || '貓爪幣購買'}
                       </span>
                       {getStatusBadge(payment.status)}
                     </div>
@@ -234,7 +234,7 @@ const PaymentHistory = () => {
                     {payment.credits && payment.status === 'succeeded' && (
                       <p className="text-sm text-green-600 flex items-center justify-end gap-1">
                         <Coins className="w-3 h-3" />
-                        +{payment.credits} 閃幣
+                        +{payment.credits} 貓爪幣
                       </p>
                     )}
                   </div>

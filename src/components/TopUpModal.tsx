@@ -107,10 +107,10 @@ export function TopUpModal({ open, onOpenChange }: TopUpModalProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Coins className="w-5 h-5 text-yellow-600" />
-            購買閃幣
+            購買貓爪幣
           </DialogTitle>
           <DialogDescription>
-            選擇適合您的閃幣方案。閃幣可用於建立投票 (10閃幣) 和投票 (1閃幣)。
+            選擇適合您的貓爪幣方案。貓爪幣可用於建立投票 (10貓爪幣) 和投票 (1貓爪幣)。
           </DialogDescription>
         </DialogHeader>
 
@@ -141,7 +141,7 @@ export function TopUpModal({ open, onOpenChange }: TopUpModalProps) {
                   </div>
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Coins className="w-3.5 h-3.5" />
-                    <span>{pkg.credits} 閃幣</span>
+                    <span>{pkg.credits} 貓爪幣</span>
                   </div>
                 </div>
                 <Button

@@ -22,19 +22,19 @@ const Terms = () => {
           <section className="mb-8">
             <h2 className="text-xl font-semibold mb-4">1. 服務說明</h2>
             <p className="text-muted-foreground mb-4">
-              快速投票（Quick Polls）是一個線上即時投票平台，讓用戶能夠建立投票、參與投票，並即時查看投票結果。
+              貓爪達人投票社（CatPawVote）是一個線上即時投票平台，讓用戶能夠建立投票、參與投票，並即時查看投票結果。
             </p>
           </section>
 
           <section className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">2. 帳戶與閃幣</h2>
+            <h2 className="text-xl font-semibold mb-4">2. 帳戶與貓爪幣</h2>
             <ul className="list-disc pl-6 text-muted-foreground space-y-2">
-              <li>新用戶註冊後將獲得 100 閃幣作為歡迎禮物</li>
-              <li>建立投票需要 10 閃幣</li>
-              <li>參與投票需要 1 閃幣（僅限已登入用戶）</li>
-              <li>訪客可以免費參與投票，無需閃幣</li>
-              <li>閃幣可透過購買方案獲得，購買後不可退款</li>
-              <li>閃幣無使用期限，但帳戶被終止時閃幣將失效</li>
+              <li>新用戶註冊後將獲得 100 貓爪幣作為歡迎禮物</li>
+              <li>建立投票需要 10 貓爪幣</li>
+              <li>參與投票需要 1 貓爪幣（僅限已登入用戶）</li>
+              <li>訪客可以免費參與投票，無需貓爪幣</li>
+              <li>貓爪幣可透過購買方案獲得，購買後不可退款</li>
+              <li>貓爪幣無使用期限，但帳戶被終止時貓爪幣將失效</li>
             </ul>
           </section>
 
@@ -43,7 +43,7 @@ const Terms = () => {
             <ul className="list-disc pl-6 text-muted-foreground space-y-2">
               <li>所有付款均透過 Stripe 安全處理</li>
               <li>價格以美元計價</li>
-              <li>購買完成後，閃幣將立即加入您的帳戶</li>
+              <li>購買完成後，貓爪幣將立即加入您的帳戶</li>
               <li>數位商品一經購買，恕不退款</li>
             </ul>
           </section>
@@ -100,7 +100,7 @@ const Terms = () => {
           <section className="mb-8">
             <h2 className="text-xl font-semibold mb-4">9. 聯絡我們</h2>
             <p className="text-muted-foreground">
-              如有任何問題或疑慮，請透過電子郵件聯絡我們：support@quickpolls.app
+              如有任何問題或疑慮，請透過電子郵件聯絡我們：support@catpawvote.app
             </p>
           </section>
 
