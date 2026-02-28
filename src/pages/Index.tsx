@@ -371,8 +371,21 @@ const Index = () => {
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-primary to-purple-600 mb-6">
-            <Vote className="w-8 h-8 text-white" />
+          <div className="inline-flex items-center justify-center w-20 h-20 mb-6">
+            <svg viewBox="0 0 100 100" className="w-20 h-20">
+              <defs>
+                <linearGradient id="pawGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style={{ stopColor: '#9333ea' }} />
+                  <stop offset="100%" style={{ stopColor: '#7c3aed' }} />
+                </linearGradient>
+              </defs>
+              <ellipse cx="50" cy="62" rx="32" ry="28" fill="url(#pawGradient)" />
+              <circle cx="22" cy="28" r="14" fill="url(#pawGradient)" />
+              <circle cx="41" cy="16" r="12" fill="url(#pawGradient)" />
+              <circle cx="59" cy="16" r="12" fill="url(#pawGradient)" />
+              <circle cx="78" cy="28" r="14" fill="url(#pawGradient)" />
+              <text x="50" y="70" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="16" fontWeight="bold" fill="white">VOTE</text>
+            </svg>
           </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary via-purple-500 to-purple-600 bg-clip-text text-transparent">
             貓爪達人投票社
