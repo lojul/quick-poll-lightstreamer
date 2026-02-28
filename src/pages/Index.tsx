@@ -18,26 +18,8 @@ import { TopUpModal } from '@/components/TopUpModal';
 import { InsufficientCreditsModal } from '@/components/InsufficientCreditsModal';
 import { supabase } from '@/integrations/supabase/client';
 
-const VOTED_POLLS_KEY = 'quick-polls-voted';
-
-// Load voted polls from localStorage
-const loadVotedPolls = (): Set<string> => {
-  try {
-    const stored = localStorage.getItem(VOTED_POLLS_KEY);
-    return stored ? new Set(JSON.parse(stored)) : new Set();
-  } catch {
-    return new Set();
-  }
-};
-
-// Save voted polls to localStorage
-const saveVotedPolls = (polls: Set<string>) => {
-  try {
-    localStorage.setItem(VOTED_POLLS_KEY, JSON.stringify([...polls]));
-  } catch {
-    // Ignore storage errors
-  }
-};
+// No longer need localStorage - database is the source of truth for registered users
+// Guests see all polls as "not yet voted" until they login
 
 const Index = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -48,7 +30,7 @@ const Index = () => {
     action: 'poll' | 'vote';
     creditsNeeded: number;
   }>({ open: false, action: 'poll', creditsNeeded: 0 });
-  const [votedPolls, setVotedPolls] = useState<Set<string>>(() => loadVotedPolls());
+  const [votedPolls, setVotedPolls] = useState<Set<string>>(new Set());
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Auth hook
@@ -65,14 +47,13 @@ const Index = () => {
     refetch: refetchCredits,
   } = useCredits();
 
-  // Save voted polls whenever they change
+  // Load user's voted polls from database when authenticated, clear on logout
   useEffect(() => {
-    saveVotedPolls(votedPolls);
-  }, [votedPolls]);
-
-  // Load user's voted polls from database when authenticated
-  useEffect(() => {
-    if (!isAuthenticated || !user) return;
+    if (!isAuthenticated || !user) {
+      // Clear voted polls when logged out - guests see all as "not yet voted"
+      setVotedPolls(new Set());
+      return;
+    }
 
     const loadUserVotes = async () => {
       const { data: votes } = await supabase
@@ -82,7 +63,9 @@ const Index = () => {
 
       if (votes && votes.length > 0) {
         const pollIds = votes.map(v => v.poll_id);
-        setVotedPolls(prev => new Set([...prev, ...pollIds]));
+        setVotedPolls(new Set(pollIds));
+      } else {
+        setVotedPolls(new Set());
       }
     };
 
