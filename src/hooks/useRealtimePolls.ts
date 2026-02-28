@@ -29,6 +29,83 @@ export function mergeVoteUpdates(polls: Poll[], voteUpdates: Map<string, number>
   }));
 }
 
+/**
+ * Get total votes for a poll
+ */
+function getTotalVotes(poll: Poll): number {
+  return poll.poll_options.reduce((sum, opt) => sum + (opt.vote_count || 0), 0);
+}
+
+/**
+ * Tiered sorting algorithm:
+ * - Slots 1-2: Latest voted polls with >5 votes (recency/live)
+ * - Slots 3-10: Most voted (trending/popularity)
+ * - Slots 11-20: Composite (votes DESC, last_voted DESC, created DESC)
+ * - Slots 21+: Most votes, then last_voted DESC
+ */
+export function sortPollsTiered(polls: Poll[]): Poll[] {
+  const MIN_VOTES_THRESHOLD = 5;
+
+  // Add computed fields for sorting
+  const pollsWithStats = polls.map(poll => ({
+    poll,
+    totalVotes: getTotalVotes(poll),
+    lastVotedAt: poll.last_voted_at ? new Date(poll.last_voted_at).getTime() : 0,
+    createdAt: new Date(poll.created_at).getTime(),
+  }));
+
+  // Tier 1-2: Latest voted with >5 votes (recency)
+  const recentlyVoted = pollsWithStats
+    .filter(p => p.totalVotes >= MIN_VOTES_THRESHOLD && p.lastVotedAt > 0)
+    .sort((a, b) => b.lastVotedAt - a.lastVotedAt)
+    .slice(0, 2);
+
+  const tier1Ids = new Set(recentlyVoted.map(p => p.poll.id));
+
+  // Remaining polls after tier 1
+  const remaining = pollsWithStats.filter(p => !tier1Ids.has(p.poll.id));
+
+  // Tier 3-10: Most voted (popularity)
+  const mostVoted = [...remaining]
+    .sort((a, b) => b.totalVotes - a.totalVotes)
+    .slice(0, 8);
+
+  const tier2Ids = new Set(mostVoted.map(p => p.poll.id));
+
+  // Remaining after tier 2
+  const remaining2 = remaining.filter(p => !tier2Ids.has(p.poll.id));
+
+  // Tier 11-20: Composite score (votes DESC, last_voted DESC, created DESC)
+  const composite = [...remaining2]
+    .sort((a, b) => {
+      // Primary: votes DESC
+      if (b.totalVotes !== a.totalVotes) return b.totalVotes - a.totalVotes;
+      // Secondary: last_voted DESC
+      if (b.lastVotedAt !== a.lastVotedAt) return b.lastVotedAt - a.lastVotedAt;
+      // Tertiary: created DESC
+      return b.createdAt - a.createdAt;
+    })
+    .slice(0, 10);
+
+  const tier3Ids = new Set(composite.map(p => p.poll.id));
+
+  // Tier 21+: Remaining sorted by votes DESC, last_voted DESC
+  const rest = remaining2
+    .filter(p => !tier3Ids.has(p.poll.id))
+    .sort((a, b) => {
+      if (b.totalVotes !== a.totalVotes) return b.totalVotes - a.totalVotes;
+      return b.lastVotedAt - a.lastVotedAt;
+    });
+
+  // Combine all tiers
+  return [
+    ...recentlyVoted.map(p => p.poll),
+    ...mostVoted.map(p => p.poll),
+    ...composite.map(p => p.poll),
+    ...rest.map(p => p.poll),
+  ];
+}
+
 export const useRealtimePolls = () => {
   const [polls, setPolls] = useState<Poll[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,20 +145,21 @@ export const useRealtimePolls = () => {
           question,
           created_at,
           deadline,
+          last_voted_at,
           poll_options (
             id,
             text,
             vote_count,
             poll_id
           )
-        `)
-        .order('created_at', { ascending: false });
+        `);
 
       if (pollsError) throw pollsError;
 
-      const pollsArray = pollsData || [];
-      pollsRef.current = pollsArray;
-      setPolls(pollsArray);
+      // Apply tiered sorting algorithm
+      const sortedPolls = sortPollsTiered(pollsData || []);
+      pollsRef.current = sortedPolls;
+      setPolls(sortedPolls);
       setTotalVotes(calculateTotalVotes(pollsArray));
       console.log('[Supabase] Loaded', pollsArray.length, 'polls');
       setConnectedStatus();

@@ -10,6 +10,7 @@ export interface Poll {
   question: string;
   created_at: string;
   deadline?: string; // optional until migration is run
+  last_voted_at?: string; // tracks when last vote was cast
   poll_options: PollOption[];
 }
 
