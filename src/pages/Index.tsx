@@ -69,6 +69,26 @@ const Index = () => {
   useEffect(() => {
     saveVotedPolls(votedPolls);
   }, [votedPolls]);
+
+  // Load user's voted polls from database when authenticated
+  useEffect(() => {
+    if (!isAuthenticated || !user) return;
+
+    const loadUserVotes = async () => {
+      const { data: votes } = await supabase
+        .from('votes')
+        .select('poll_id')
+        .eq('voter_id', user.id);
+
+      if (votes && votes.length > 0) {
+        const pollIds = votes.map(v => v.poll_id);
+        setVotedPolls(prev => new Set([...prev, ...pollIds]));
+      }
+    };
+
+    loadUserVotes();
+  }, [isAuthenticated, user]);
+
   const { toast } = useToast();
 
   // Handle payment success/cancelled URL params
@@ -211,18 +231,18 @@ const Index = () => {
   };
 
   const handleVote = async (pollId: string, optionId: string) => {
-    // Check if already voted
-    if (votedPolls.has(pollId)) {
+    // Require login to vote
+    if (!isAuthenticated) {
       toast({
-        title: "已經投過票了",
-        description: "每個投票只能投一次。",
-        variant: "destructive"
+        title: "請先登入",
+        description: "登入後即可參與投票。",
       });
+      setShowAuthModal(true);
       return;
     }
 
-    // Check credits for authenticated users
-    if (isAuthenticated && !hasEnoughForVote) {
+    // Check credits
+    if (!hasEnoughForVote) {
       setInsufficientCreditsState({
         open: true,
         action: 'vote',
@@ -232,23 +252,40 @@ const Index = () => {
     }
 
     try {
-      // Record the vote with voter_id if authenticated
+      // Check if user already voted on this poll (database check)
+      const { data: existingVote } = await supabase
+        .from('votes')
+        .select('id')
+        .eq('poll_id', pollId)
+        .eq('voter_id', user!.id)
+        .single();
+
+      if (existingVote) {
+        toast({
+          title: "已經投過票了",
+          description: "每個投票只能投一次。",
+          variant: "destructive"
+        });
+        // Also update local cache
+        setVotedPolls(prev => new Set([...prev, pollId]));
+        return;
+      }
+
+      // Record the vote with voter_id
       const { error: voteError } = await supabase
         .from('votes')
         .insert({
           poll_id: pollId,
           option_id: optionId,
-          voter_id: user?.id || null,
+          voter_id: user!.id,
         });
 
       if (voteError) throw voteError;
 
-      // Deduct credits for authenticated users
-      if (isAuthenticated && user) {
-        const deducted = await deductForVote(pollId);
-        if (!deducted) {
-          console.warn('Failed to deduct credits for vote, but vote was recorded');
-        }
+      // Deduct credits
+      const deducted = await deductForVote(pollId);
+      if (!deducted) {
+        console.warn('Failed to deduct credits for vote, but vote was recorded');
       }
 
       // Increment vote count directly
@@ -268,10 +305,9 @@ const Index = () => {
       if (updateError) throw updateError;
 
       setVotedPolls(prev => new Set([...prev, pollId]));
-      // lastUpdate will be updated automatically via Lightstreamer when the vote is detected
       toast({
         title: "投票已記錄！",
-        description: "感謝您參與投票。",
+        description: `感謝您參與投票。已扣除 ${VOTE_COST} 閃幣。`,
       });
     } catch (error) {
       console.error('[Vote] Error:', error);
