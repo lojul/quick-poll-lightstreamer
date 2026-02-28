@@ -48,6 +48,17 @@ export function useAuth() {
     return { error };
   };
 
+  const resendVerificationEmail = async (email: string) => {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+    });
+    return { error };
+  };
+
+  // Check if email is verified
+  const isEmailVerified = user?.email_confirmed_at !== null && user?.email_confirmed_at !== undefined;
+
   return {
     user,
     session,
@@ -55,6 +66,8 @@ export function useAuth() {
     signUp,
     signIn,
     signOut,
+    resendVerificationEmail,
     isAuthenticated: !!user,
+    isEmailVerified,
   };
 }

@@ -1,23 +1,25 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Mail, RefreshCw } from 'lucide-react';
 
 interface AuthModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSignUp: (email: string, password: string) => Promise<{ data: { user: unknown; session: unknown } | null; error: Error | null }>;
   onSignIn: (email: string, password: string) => Promise<{ data: unknown; error: Error | null }>;
+  onResendVerification?: (email: string) => Promise<{ error: Error | null }>;
 }
 
-export function AuthModal({ open, onOpenChange, onSignUp, onSignIn }: AuthModalProps) {
+export function AuthModal({ open, onOpenChange, onSignUp, onSignIn, onResendVerification }: AuthModalProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [resendEmail, setResendEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
   const { toast } = useToast();
@@ -26,6 +28,27 @@ export function AuthModal({ open, onOpenChange, onSignUp, onSignIn }: AuthModalP
     setEmail('');
     setPassword('');
     setConfirmPassword('');
+  };
+
+  const handleResendVerification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resendEmail || !onResendVerification) {
+      toast({ title: '錯誤', description: '請輸入電子郵件', variant: 'destructive' });
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await onResendVerification(resendEmail);
+    setLoading(false);
+
+    if (error) {
+      toast({ title: '發送失敗', description: error.message, variant: 'destructive' });
+    } else {
+      toast({
+        title: '已發送驗證郵件',
+        description: '請檢查您的信箱並點擊驗證連結。',
+      });
+    }
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -98,9 +121,10 @@ export function AuthModal({ open, onOpenChange, onSignUp, onSignIn }: AuthModalP
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="login">登入</TabsTrigger>
             <TabsTrigger value="signup">註冊</TabsTrigger>
+            <TabsTrigger value="resend">重發驗證</TabsTrigger>
           </TabsList>
 
           <TabsContent value="login" className="space-y-4 mt-4">
@@ -172,6 +196,32 @@ export function AuthModal({ open, onOpenChange, onSignUp, onSignIn }: AuthModalP
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 註冊
+              </Button>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="resend" className="space-y-4 mt-4">
+            <div className="text-center mb-4">
+              <Mail className="w-12 h-12 mx-auto text-primary mb-2" />
+              <p className="text-sm text-muted-foreground">
+                沒有收到驗證郵件？輸入您的電子郵件重新發送。
+              </p>
+            </div>
+            <form onSubmit={handleResendVerification} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="resend-email">電子郵件</Label>
+                <Input
+                  id="resend-email"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={resendEmail}
+                  onChange={(e) => setResendEmail(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+                重新發送驗證郵件
               </Button>
             </form>
           </TabsContent>
