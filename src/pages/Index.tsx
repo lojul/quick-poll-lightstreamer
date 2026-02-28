@@ -243,8 +243,27 @@ const Index = () => {
       return;
     }
 
+    // IMMEDIATE client-side check - prevent rapid double clicks
+    if (votedPolls.has(pollId)) {
+      toast({
+        title: "已經投過票了",
+        description: "每個投票只能投一次。",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // IMMEDIATELY mark as voted to prevent double-clicks (optimistic update)
+    setVotedPolls(prev => new Set([...prev, pollId]));
+
     // Check credits
     if (!hasEnoughForVote) {
+      // Rollback optimistic update
+      setVotedPolls(prev => {
+        const next = new Set(prev);
+        next.delete(pollId);
+        return next;
+      });
       setInsufficientCreditsState({
         open: true,
         action: 'vote',
@@ -254,26 +273,8 @@ const Index = () => {
     }
 
     try {
-      // Check if user already voted on this poll (database check)
-      const { data: existingVote } = await supabase
-        .from('votes')
-        .select('id')
-        .eq('poll_id', pollId)
-        .eq('voter_id', user!.id)
-        .single();
-
-      if (existingVote) {
-        toast({
-          title: "已經投過票了",
-          description: "每個投票只能投一次。",
-          variant: "destructive"
-        });
-        // Also update local cache
-        setVotedPolls(prev => new Set([...prev, pollId]));
-        return;
-      }
-
       // Record the vote with voter_id
+      // Database has unique constraint on (poll_id, voter_id) to prevent duplicates
       const { error: voteError } = await supabase
         .from('votes')
         .insert({
@@ -282,7 +283,18 @@ const Index = () => {
           voter_id: user!.id,
         });
 
-      if (voteError) throw voteError;
+      if (voteError) {
+        // Check if it's a duplicate vote error
+        if (voteError.code === '23505') {
+          toast({
+            title: "已經投過票了",
+            description: "每個投票只能投一次。",
+            variant: "destructive"
+          });
+          return; // Keep votedPolls updated since vote already exists
+        }
+        throw voteError;
+      }
 
       // Deduct credits
       const deducted = await deductForVote(pollId);
@@ -306,13 +318,19 @@ const Index = () => {
 
       if (updateError) throw updateError;
 
-      setVotedPolls(prev => new Set([...prev, pollId]));
+      // Vote successful - already marked in votedPolls at the start
       toast({
         title: "投票已記錄！",
         description: `感謝您參與投票。已扣除 ${VOTE_COST} 閃幣。`,
       });
     } catch (error) {
       console.error('[Vote] Error:', error);
+      // Rollback optimistic update on error
+      setVotedPolls(prev => {
+        const next = new Set(prev);
+        next.delete(pollId);
+        return next;
+      });
       toast({
         title: "錯誤",
         description: "記錄投票失敗，請重試。",
