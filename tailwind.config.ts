@@ -93,17 +93,13 @@ export default {
           },
         },
         "vote-flash": {
-          "0%": {
-            backgroundColor: "rgba(250, 204, 21, 0.4)",
-            transform: "scale(1.02)",
+          "0%, 100%": {
+            backgroundColor: "rgba(250, 204, 21, 0.5)",
+            boxShadow: "0 0 20px rgba(250, 204, 21, 0.6)",
           },
           "50%": {
-            backgroundColor: "rgba(250, 204, 21, 0.2)",
-            transform: "scale(1.01)",
-          },
-          "100%": {
-            backgroundColor: "transparent",
-            transform: "scale(1)",
+            backgroundColor: "rgba(250, 204, 21, 0.3)",
+            boxShadow: "0 0 10px rgba(250, 204, 21, 0.4)",
           },
         },
       },
