@@ -1,5 +1,7 @@
+import { Link } from 'react-router-dom';
 import { Poll } from '@/types/poll';
 import { PollCard } from './PollCard';
+import { Archive } from 'lucide-react';
 
 interface PollListProps {
   polls: Poll[];
@@ -7,9 +9,10 @@ interface PollListProps {
   votedPolls: Set<string>;
   isAuthenticated?: boolean;
   flashingOptions?: Set<string>;
+  expiredCount?: number;
 }
 
-export function PollList({ polls, onVote, votedPolls, isAuthenticated = false, flashingOptions = new Set() }: PollListProps) {
+export function PollList({ polls, onVote, votedPolls, isAuthenticated = false, flashingOptions = new Set(), expiredCount = 0 }: PollListProps) {
   if (polls.length === 0) {
     return (
       <div className="text-center py-12">
@@ -39,6 +42,19 @@ export function PollList({ polls, onVote, votedPolls, isAuthenticated = false, f
           />
         ))}
       </div>
+
+      {/* Link to expired polls */}
+      {expiredCount > 0 && (
+        <div className="text-center pt-4">
+          <Link
+            to="/expired"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            <Archive className="w-4 h-4" />
+            查看 {expiredCount} 個已截止投票
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

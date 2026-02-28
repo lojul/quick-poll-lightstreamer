@@ -493,6 +493,7 @@ const Index = () => {
               votedPolls={votedPolls}
               isAuthenticated={isAuthenticated}
               flashingOptions={flashingOptions}
+              expiredCount={expiredCount}
             />
           )}
         </div>
