@@ -11,7 +11,7 @@ const PaymentResult = () => {
   const payment = searchParams.get('payment');
   const isSuccess = payment === 'success';
   const isCancelled = payment === 'cancelled';
-  const { credits, loading: creditsLoading, refetch } = useCredits();
+  const { refetch } = useCredits();
   const [hasVerified, setHasVerified] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [creditedAmount, setCreditedAmount] = useState<number | null>(null);
@@ -116,17 +116,11 @@ const PaymentResult = () => {
             ) : (
               <>
                 {creditedAmount && (
-                  <div className="flex items-center justify-center gap-2 mb-4 p-4 bg-green-500/10 rounded-lg border border-green-500/30">
+                  <div className="flex items-center justify-center gap-2 mb-6 p-4 bg-green-500/10 rounded-lg border border-green-500/30">
                     <Coins className="w-6 h-6 text-green-600" />
                     <span className="text-xl font-bold text-green-600">+{creditedAmount} 閃幣</span>
                   </div>
                 )}
-                <div className="flex items-center justify-center gap-2 mb-6 p-4 bg-yellow-500/10 rounded-lg">
-                  <Coins className="w-5 h-5 text-yellow-600" />
-                  <span className="text-lg font-semibold">
-                    目前餘額: {creditsLoading ? '...' : credits ?? 0} 閃幣
-                  </span>
-                </div>
               </>
             )}
           </>
