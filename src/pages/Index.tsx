@@ -1,13 +1,20 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { CreatePoll } from '@/components/CreatePoll';
 import { PollList } from '@/components/PollList';
 import { Button } from '@/components/ui/button';
-import { CreatePollData } from '@/types/poll';
+import { CreatePollData, Poll } from '@/types/poll';
 import { PlusCircle, Vote, LogIn, LogOut, User, Users, Archive } from 'lucide-react';
 import { isPast } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import { useRealtimePolls, getAllOptionIds, mergeVoteUpdates } from '@/hooks/useRealtimePolls';
+import { useRealtimePolls, getAllOptionIds, mergeVoteUpdates, sortPollsTiered } from '@/hooks/useRealtimePolls';
+
+// ============================================
+// REAL-TIME SORTING CONFIG (easy to rollback)
+// Set to false to disable real-time re-sorting
+// ============================================
+const ENABLE_REALTIME_SORTING = true;
+const SORT_DEBOUNCE_MS = 2000; // Re-sort every 2 seconds
 import { useLightstreamerVotes } from '@/hooks/useLightstreamerVotes';
 import { useLightstreamerVisitors } from '@/hooks/useLightstreamerVisitors';
 import { RealtimeIndicator } from '@/components/RealtimeIndicator';
@@ -123,6 +130,12 @@ const Index = () => {
     }
   }, [basePolls, lightstreamerEnabled, setOptionIds]);
 
+  // Track client-side last_voted_at for real-time sorting
+  const [clientLastVoted, setClientLastVoted] = useState<Map<string, string>>(new Map());
+  const [sortedPolls, setSortedPolls] = useState<Poll[]>([]);
+  const sortTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastVoteUpdateRef = useRef<number>(0);
+
   // Merge Lightstreamer vote updates into polls
   const allPolls = useMemo(() => {
     if (!lightstreamerEnabled || voteUpdates.size === 0) {
@@ -131,12 +144,75 @@ const Index = () => {
     return mergeVoteUpdates(basePolls, voteUpdates);
   }, [basePolls, voteUpdates, lightstreamerEnabled]);
 
+  // Update client-side last_voted_at when Lightstreamer sends updates
+  useEffect(() => {
+    if (!ENABLE_REALTIME_SORTING || !lightstreamerEnabled || voteUpdates.size === 0) return;
+
+    const now = new Date().toISOString();
+    const newClientLastVoted = new Map(clientLastVoted);
+    let hasChanges = false;
+
+    // Find which polls have options that received votes
+    for (const poll of basePolls) {
+      for (const option of poll.poll_options) {
+        const updatedCount = voteUpdates.get(option.id);
+        if (updatedCount !== undefined && updatedCount !== option.vote_count) {
+          newClientLastVoted.set(poll.id, now);
+          hasChanges = true;
+          break;
+        }
+      }
+    }
+
+    if (hasChanges) {
+      setClientLastVoted(newClientLastVoted);
+      lastVoteUpdateRef.current = Date.now();
+    }
+  }, [voteUpdates, basePolls, lightstreamerEnabled, clientLastVoted]);
+
+  // Debounced re-sorting when votes come in
+  useEffect(() => {
+    if (!ENABLE_REALTIME_SORTING) {
+      // Real-time sorting disabled - just use allPolls as-is
+      setSortedPolls(allPolls);
+      return;
+    }
+
+    // Apply client-side last_voted_at to polls before sorting
+    const pollsWithClientLastVoted = allPolls.map(poll => ({
+      ...poll,
+      last_voted_at: clientLastVoted.get(poll.id) || poll.last_voted_at,
+    }));
+
+    // Debounce the re-sort
+    if (sortTimeoutRef.current) {
+      clearTimeout(sortTimeoutRef.current);
+    }
+
+    sortTimeoutRef.current = setTimeout(() => {
+      const sorted = sortPollsTiered(pollsWithClientLastVoted);
+      setSortedPolls(sorted);
+    }, SORT_DEBOUNCE_MS);
+
+    // Initial sort without debounce
+    if (sortedPolls.length === 0) {
+      setSortedPolls(sortPollsTiered(pollsWithClientLastVoted));
+    }
+
+    return () => {
+      if (sortTimeoutRef.current) {
+        clearTimeout(sortTimeoutRef.current);
+      }
+    };
+  }, [allPolls, clientLastVoted]);
+
   // Filter active polls (not expired) for main page
   const { activePolls: polls, expiredCount } = useMemo(() => {
-    const active: typeof allPolls = [];
+    const pollsToFilter = ENABLE_REALTIME_SORTING ? sortedPolls : allPolls;
+    const active: Poll[] = [];
     let expired = 0;
 
-    for (const poll of allPolls) {
+    for (const poll of pollsToFilter) {
       if (poll.deadline && isPast(new Date(poll.deadline))) {
         expired++;
       } else {
@@ -145,7 +221,7 @@ const Index = () => {
     }
 
     return { activePolls: active, expiredCount: expired };
-  }, [allPolls]);
+  }, [sortedPolls, allPolls]);
 
   // Calculate total votes from merged polls
   const displayTotalVotes = useMemo(() => {
