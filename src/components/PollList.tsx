@@ -6,9 +6,10 @@ interface PollListProps {
   onVote: (pollId: string, optionId: string) => void;
   votedPolls: Set<string>;
   isAuthenticated?: boolean;
+  flashingOptions?: Set<string>;
 }
 
-export function PollList({ polls, onVote, votedPolls, isAuthenticated = false }: PollListProps) {
+export function PollList({ polls, onVote, votedPolls, isAuthenticated = false, flashingOptions = new Set() }: PollListProps) {
   if (polls.length === 0) {
     return (
       <div className="text-center py-12">
@@ -34,6 +35,7 @@ export function PollList({ polls, onVote, votedPolls, isAuthenticated = false }:
             onVote={onVote}
             hasVoted={votedPolls.has(poll.id)}
             isAuthenticated={isAuthenticated}
+            flashingOptions={flashingOptions}
           />
         ))}
       </div>

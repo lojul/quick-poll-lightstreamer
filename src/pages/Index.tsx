@@ -104,6 +104,7 @@ const Index = () => {
   // Use Lightstreamer for real-time vote streaming
   const {
     voteUpdates,
+    flashingOptions,
     connectionStatus: lightstreamerStatus,
     isEnabled: lightstreamerEnabled,
     setOptionIds,
@@ -461,6 +462,7 @@ const Index = () => {
               onVote={handleVote}
               votedPolls={votedPolls}
               isAuthenticated={isAuthenticated}
+              flashingOptions={flashingOptions}
             />
           )}
         </div>

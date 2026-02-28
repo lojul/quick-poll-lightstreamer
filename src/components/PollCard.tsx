@@ -14,9 +14,10 @@ interface PollCardProps {
   onVote: (pollId: string, optionId: string) => void;
   hasVoted?: boolean;
   isAuthenticated?: boolean;
+  flashingOptions?: Set<string>;
 }
 
-export function PollCard({ poll, onVote, hasVoted = false, isAuthenticated = false }: PollCardProps) {
+export function PollCard({ poll, onVote, hasVoted = false, isAuthenticated = false, flashingOptions = new Set() }: PollCardProps) {
   const [viewMode, setViewMode] = useState<'list' | 'chart'>('list');
 
   // Handle case where deadline doesn't exist yet (before migration)
@@ -99,19 +100,20 @@ export function PollCard({ poll, onVote, hasVoted = false, isAuthenticated = fal
           <div className="space-y-3">
             {poll.poll_options.map((option) => {
               const percentage = getPercentage(option.vote_count);
+              const isFlashing = flashingOptions.has(option.id);
 
               return (
                 <div key={option.id} className="space-y-2">
                   {canVote ? (
-                    <div className="relative">
+                    <div className={`relative transition-all duration-300 ${isFlashing ? 'animate-vote-flash scale-[1.02]' : ''}`}>
                       <button
                         onClick={() => handleOptionClick(option.id)}
-                        className="w-full p-4 rounded-lg border transition-all duration-200 text-left bg-poll-option border-poll-card-border hover:bg-poll-option-hover hover:border-primary/50 hover:shadow-md cursor-pointer"
+                        className={`w-full p-4 rounded-lg border transition-all duration-200 text-left bg-poll-option border-poll-card-border hover:bg-poll-option-hover hover:border-primary/50 hover:shadow-md cursor-pointer ${isFlashing ? 'ring-2 ring-yellow-400 ring-opacity-75 bg-yellow-50 dark:bg-yellow-900/20' : ''}`}
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-medium">{option.text}</span>
                           <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground">
+                            <span className={`text-sm transition-all duration-200 ${isFlashing ? 'text-yellow-600 font-bold scale-110' : 'text-muted-foreground'}`}>
                               {option.vote_count} 票 ({percentage}%)
                             </span>
                             <div className="w-4 h-4 rounded-full border-2 border-primary/30 flex items-center justify-center">
@@ -124,31 +126,31 @@ export function PollCard({ poll, onVote, hasVoted = false, isAuthenticated = fal
                       {totalVotes > 0 && (
                         <div className="mt-2 h-1 bg-gray-200 rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-gradient-to-r from-primary to-purple-500 transition-all duration-500"
+                            className={`h-full transition-all duration-500 ${isFlashing ? 'bg-gradient-to-r from-yellow-400 to-yellow-500' : 'bg-gradient-to-r from-primary to-purple-500'}`}
                             style={{ width: `${percentage}%` }}
                           />
                         </div>
                       )}
                     </div>
                   ) : (
-                    <div className="relative p-4 rounded-lg bg-poll-result-bg border border-poll-card-border overflow-hidden">
+                    <div className={`relative p-4 rounded-lg bg-poll-result-bg border border-poll-card-border overflow-hidden transition-all duration-300 ${isFlashing ? 'animate-vote-flash scale-[1.02] ring-2 ring-yellow-400 ring-opacity-75' : ''}`}>
                       <div
-                        className="absolute inset-0 bg-gradient-to-r from-primary/20 to-transparent transition-all duration-500"
+                        className={`absolute inset-0 transition-all duration-500 ${isFlashing ? 'bg-gradient-to-r from-yellow-400/30 to-transparent' : 'bg-gradient-to-r from-primary/20 to-transparent'}`}
                         style={{ width: `${percentage}%` }}
                       />
                       <div className="relative flex items-center justify-between">
                         <span className="font-medium">{option.text}</span>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground">
+                          <span className={`text-sm transition-all duration-200 ${isFlashing ? 'text-yellow-600 font-bold scale-110' : 'text-muted-foreground'}`}>
                             {option.vote_count} 票
                           </span>
-                          <Badge variant="outline">{percentage}%</Badge>
+                          <Badge variant="outline" className={isFlashing ? 'bg-yellow-100 border-yellow-400 text-yellow-700' : ''}>{percentage}%</Badge>
                         </div>
                       </div>
                       {/* Progress bar for voted state */}
                       <div className="mt-2 h-1 bg-gray-200 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-primary to-purple-500 transition-all duration-500"
+                          className={`h-full transition-all duration-500 ${isFlashing ? 'bg-gradient-to-r from-yellow-400 to-yellow-500' : 'bg-gradient-to-r from-primary to-purple-500'}`}
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
