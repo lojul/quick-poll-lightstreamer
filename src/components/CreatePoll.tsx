@@ -23,6 +23,9 @@ const DEADLINE_OPTIONS = [
   { value: '30', label: '30 天' },
 ];
 
+const MAX_TEXT_LENGTH = 45;
+const MAX_NUMBER_LENGTH = 16;
+
 export function CreatePoll({ onCreatePoll, hasEnoughCredits = true, credits }: CreatePollProps) {
   const [question, setQuestion] = useState('');
   const [options, setOptions] = useState(['', '']);
@@ -40,10 +43,23 @@ export function CreatePoll({ onCreatePoll, hasEnoughCredits = true, credits }: C
     }
   };
 
+  // Limit input based on content type
+  const limitInput = (value: string): string => {
+    // Check if input is purely numeric
+    if (/^\d+$/.test(value)) {
+      return value.slice(0, MAX_NUMBER_LENGTH);
+    }
+    return value.slice(0, MAX_TEXT_LENGTH);
+  };
+
   const updateOption = (index: number, value: string) => {
     const newOptions = [...options];
-    newOptions[index] = value;
+    newOptions[index] = limitInput(value);
     setOptions(newOptions);
+  };
+
+  const updateQuestion = (value: string) => {
+    setQuestion(limitInput(value));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -97,28 +113,45 @@ export function CreatePoll({ onCreatePoll, hasEnoughCredits = true, credits }: C
       
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="question" className="text-lg font-medium">
-            投票問題
-          </Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="question" className="text-lg font-medium">
+              投票問題
+            </Label>
+            <span className={`text-xs ${question.length >= MAX_TEXT_LENGTH ? 'text-red-500' : 'text-muted-foreground'}`}>
+              {question.length}/{MAX_TEXT_LENGTH}
+            </span>
+          </div>
           <Input
             id="question"
             value={question}
-            onChange={(e) => setQuestion(e.target.value)}
+            onChange={(e) => updateQuestion(e.target.value)}
             placeholder="您想問什麼問題？"
+            maxLength={MAX_TEXT_LENGTH}
             className="bg-poll-option border-poll-card-border focus:border-primary text-lg py-3"
           />
         </div>
 
         <div className="space-y-4">
-          <Label className="text-lg font-medium">答案選項</Label>
+          <div className="flex items-center justify-between">
+            <Label className="text-lg font-medium">答案選項</Label>
+            <span className="text-xs text-muted-foreground">
+              最多 {MAX_TEXT_LENGTH} 字
+            </span>
+          </div>
           {options.map((option, index) => (
             <div key={index} className="flex gap-2 items-center">
-              <Input
-                value={option}
-                onChange={(e) => updateOption(index, e.target.value)}
-                placeholder={`選項 ${index + 1}`}
-                className="bg-poll-option border-poll-card-border focus:border-primary"
-              />
+              <div className="flex-1 relative">
+                <Input
+                  value={option}
+                  onChange={(e) => updateOption(index, e.target.value)}
+                  placeholder={`選項 ${index + 1}`}
+                  maxLength={MAX_TEXT_LENGTH}
+                  className="bg-poll-option border-poll-card-border focus:border-primary pr-12"
+                />
+                <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs ${option.length >= MAX_TEXT_LENGTH ? 'text-red-500' : 'text-muted-foreground'}`}>
+                  {option.length}/{MAX_TEXT_LENGTH}
+                </span>
+              </div>
               {options.length > 2 && (
                 <Button
                   type="button"
