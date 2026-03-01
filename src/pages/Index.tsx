@@ -138,58 +138,12 @@ const Index = () => {
   const lastVoteUpdateRef = useRef<number>(0);
 
   // Merge Lightstreamer vote updates into polls
-  const pollsWithLightstreamer = useMemo(() => {
+  const allPolls = useMemo(() => {
     if (!lightstreamerEnabled || voteUpdates.size === 0) {
       return basePolls;
     }
     return mergeVoteUpdates(basePolls, voteUpdates);
   }, [basePolls, voteUpdates, lightstreamerEnabled]);
-
-  // Merge optimistic vote counts (instant feedback for voter)
-  // Only show optimistic increment if Lightstreamer hasn't caught up yet
-  const allPolls = useMemo(() => {
-    if (optimisticVotes.size === 0) {
-      return pollsWithLightstreamer;
-    }
-    // Apply optimistic vote increments only if needed
-    return pollsWithLightstreamer.map(poll => ({
-      ...poll,
-      poll_options: poll.poll_options.map(option => {
-        const optimistic = optimisticVotes.get(option.id);
-        if (!optimistic) return option;
-
-        const currentCount = option.vote_count || 0;
-        // If Lightstreamer has caught up (current >= expected), use real count
-        if (currentCount >= optimistic.expectedTotal) {
-          return option;
-        }
-        // Otherwise, show optimistic count
-        return { ...option, vote_count: optimistic.expectedTotal };
-      })
-    }));
-  }, [pollsWithLightstreamer, optimisticVotes]);
-
-  // Clear optimistic votes when Lightstreamer catches up
-  // Only depend on voteUpdates to avoid infinite loop
-  useEffect(() => {
-    setOptimisticVotes(prev => {
-      if (prev.size === 0) return prev;
-
-      let hasChanges = false;
-      const next = new Map(prev);
-
-      for (const [optionId, optimistic] of prev.entries()) {
-        // Find current count from Lightstreamer/base data
-        const currentCount = voteUpdates.get(optionId);
-        if (currentCount !== undefined && currentCount >= optimistic.expectedTotal) {
-          next.delete(optionId);
-          hasChanges = true;
-        }
-      }
-
-      return hasChanges ? next : prev;
-    });
-  }, [voteUpdates]);
 
   // Update client-side last_voted_at when Lightstreamer sends updates
   useEffect(() => {
@@ -357,9 +311,6 @@ const Index = () => {
 
   // Track optimistic flashes for the voter (immediate feedback)
   const [optimisticFlash, setOptimisticFlash] = useState<Set<string>>(new Set());
-  // Track optimistic vote count: optionId -> { increment, expectedTotal }
-  // expectedTotal is what we expect after our vote is confirmed
-  const [optimisticVotes, setOptimisticVotes] = useState<Map<string, { increment: number; expectedTotal: number }>>(new Map());
 
   const handleVote = async (pollId: string, optionId: string) => {
     // Require login to vote
@@ -395,25 +346,6 @@ const Index = () => {
       });
     }, 600); // Same as FLASH_DURATION_MS
 
-    // IMMEDIATE optimistic vote count - increment instantly
-    // Find current vote count for this option (use basePolls to avoid circular dep)
-    const currentPoll = basePolls.find(p => p.id === pollId);
-    const currentOption = currentPoll?.poll_options.find(o => o.id === optionId);
-    // Get count from Lightstreamer if available, otherwise from base
-    const lsCount = voteUpdates.get(optionId);
-    const currentCount = lsCount ?? currentOption?.vote_count ?? 0;
-
-    setOptimisticVotes(prev => {
-      const next = new Map(prev);
-      const existing = prev.get(optionId);
-      const newIncrement = (existing?.increment || 0) + 1;
-      next.set(optionId, {
-        increment: newIncrement,
-        expectedTotal: currentCount + newIncrement
-      });
-      return next;
-    });
-
     // Check credits
     if (!hasEnoughForVote) {
       // Rollback optimistic updates
@@ -424,11 +356,6 @@ const Index = () => {
       });
       setOptimisticFlash(prev => {
         const next = new Set(prev);
-        next.delete(optionId);
-        return next;
-      });
-      setOptimisticVotes(prev => {
-        const next = new Map(prev);
         next.delete(optionId);
         return next;
       });
@@ -474,15 +401,10 @@ const Index = () => {
       });
     } catch (error) {
       console.error('[Vote] Error:', error);
-      // Rollback optimistic updates on error
+      // Rollback optimistic update on error
       setVotedPolls(prev => {
         const next = new Set(prev);
         next.delete(pollId);
-        return next;
-      });
-      setOptimisticVotes(prev => {
-        const next = new Map(prev);
-        next.delete(optionId);
         return next;
       });
       toast({
