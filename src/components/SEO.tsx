@@ -16,7 +16,7 @@ export function SEO({
   description = "建立即時投票，收集意見反饋。支援中英文，即時更新結果，簡單易用的投票平台。Create instant polls, collect feedback with real-time updates.",
   keywords = "投票, 民意調查, 即時投票, 線上投票, 貓爪投票, 意見收集, poll, voting, survey, catpaw vote, real-time voting, 中文投票, 英文投票",
   image = "/favicon.svg",
-  url = "https://quick-poll.up.railway.app/",
+  url = "https://catpawvote.up.railway.app/",
   type = "website",
   pollQuestion,
   pollVotes

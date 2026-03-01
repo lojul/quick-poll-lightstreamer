@@ -11,7 +11,7 @@ Performance testing for 500-1000 concurrent users on the Lightstreamer-based rea
 ### 1.1 Systems Under Test
 | Component | URL | Protocol |
 |-----------|-----|----------|
-| Frontend | `https://quick-poll.up.railway.app` | HTTPS |
+| Frontend | `https://catpawvote.up.railway.app` | HTTPS |
 | Lightstreamer | `https://lightstreamer-asia-production.up.railway.app` | WSS |
 | Supabase API | `https://shblpehddhzjvhmqhxkz.supabase.co` | HTTPS |
 | Supabase Auth | Same as above | HTTPS |
