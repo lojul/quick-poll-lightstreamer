@@ -170,26 +170,26 @@ const Index = () => {
   }, [pollsWithLightstreamer, optimisticVotes]);
 
   // Clear optimistic votes when Lightstreamer catches up
+  // Only depend on voteUpdates to avoid infinite loop
   useEffect(() => {
-    if (optimisticVotes.size === 0) return;
+    setOptimisticVotes(prev => {
+      if (prev.size === 0) return prev;
 
-    const toRemove: string[] = [];
-    for (const [optionId, optimistic] of optimisticVotes.entries()) {
-      // Find current count from Lightstreamer/base data
-      const currentCount = voteUpdates.get(optionId);
-      if (currentCount !== undefined && currentCount >= optimistic.expectedTotal) {
-        toRemove.push(optionId);
+      let hasChanges = false;
+      const next = new Map(prev);
+
+      for (const [optionId, optimistic] of prev.entries()) {
+        // Find current count from Lightstreamer/base data
+        const currentCount = voteUpdates.get(optionId);
+        if (currentCount !== undefined && currentCount >= optimistic.expectedTotal) {
+          next.delete(optionId);
+          hasChanges = true;
+        }
       }
-    }
 
-    if (toRemove.length > 0) {
-      setOptimisticVotes(prev => {
-        const next = new Map(prev);
-        toRemove.forEach(id => next.delete(id));
-        return next;
-      });
-    }
-  }, [voteUpdates, optimisticVotes]);
+      return hasChanges ? next : prev;
+    });
+  }, [voteUpdates]);
 
   // Update client-side last_voted_at when Lightstreamer sends updates
   useEffect(() => {
