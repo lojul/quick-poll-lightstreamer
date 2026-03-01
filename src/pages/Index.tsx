@@ -572,6 +572,15 @@ const Index = () => {
                   loading={creditsLoading}
                   onClick={() => setShowTopUpModal(true)}
                 />
+                <Link to="/my-polls">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-primary"
+                  >
+                    我的投票
+                  </Button>
+                </Link>
                 <Link to="/payment-history">
                   <Button
                     variant="ghost"
