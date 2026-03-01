@@ -15,9 +15,10 @@ interface PollCardProps {
   hasVoted?: boolean;
   isAuthenticated?: boolean;
   flashingOptions?: Set<string>;
+  optimisticVoteCounts?: Map<string, number>;
 }
 
-export function PollCard({ poll, onVote, hasVoted = false, isAuthenticated = false, flashingOptions = new Set() }: PollCardProps) {
+export function PollCard({ poll, onVote, hasVoted = false, isAuthenticated = false, flashingOptions = new Set(), optimisticVoteCounts = new Map() }: PollCardProps) {
   const [viewMode, setViewMode] = useState<'list' | 'chart'>('list');
 
   // Handle case where deadline doesn't exist yet (before migration)
@@ -32,8 +33,13 @@ export function PollCard({ poll, onVote, hasVoted = false, isAuthenticated = fal
     }
   };
 
-  const totalVotes = poll.poll_options.reduce((sum, option) => sum + option.vote_count, 0);
-  
+  // Helper to get vote count with optimistic increment
+  const getVoteCount = (option: { id: string; vote_count: number }) => {
+    return option.vote_count + (optimisticVoteCounts.get(option.id) || 0);
+  };
+
+  const totalVotes = poll.poll_options.reduce((sum, option) => sum + getVoteCount(option), 0);
+
   const getPercentage = (votes: number) => {
     return totalVotes > 0 ? Math.round((votes / totalVotes) * 100) : 0;
   };
@@ -41,9 +47,9 @@ export function PollCard({ poll, onVote, hasVoted = false, isAuthenticated = fal
   return (
     <Card className="p-6 bg-poll-card border-poll-card-border hover:border-primary/30 transition-all duration-300">
       <div className="space-y-4">
-        <div className="flex justify-between items-start gap-4">
-          <div className="space-y-1">
-            <h3 className="text-xl font-semibold leading-tight">{poll.question}</h3>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-4">
+          <div className="space-y-1 min-w-0">
+            <h3 className="text-xl font-semibold leading-tight break-words">{poll.question}</h3>
             {/* Deadline indicator */}
             {hasDeadline && (
               <div className={`flex items-center gap-1 text-sm ${isExpired ? 'text-red-500' : 'text-muted-foreground'}`}>
@@ -61,7 +67,7 @@ export function PollCard({ poll, onVote, hasVoted = false, isAuthenticated = fal
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 flex-wrap sm:shrink-0">
             {hasDeadline && isExpired && (
               <Badge variant="destructive">已截止</Badge>
             )}
@@ -99,7 +105,8 @@ export function PollCard({ poll, onVote, hasVoted = false, isAuthenticated = fal
         ) : (
           <div className="space-y-3">
             {poll.poll_options.map((option) => {
-              const percentage = getPercentage(option.vote_count);
+              const voteCount = getVoteCount(option);
+              const percentage = getPercentage(voteCount);
               const isFlashing = flashingOptions.has(option.id);
 
               return (
@@ -114,7 +121,7 @@ export function PollCard({ poll, onVote, hasVoted = false, isAuthenticated = fal
                           <span className="font-medium">{option.text}</span>
                           <div className="flex items-center gap-2">
                             <span className={`text-sm transition-all duration-200 ${isFlashing ? 'text-yellow-600 font-bold' : 'text-muted-foreground'}`}>
-                              {option.vote_count} 票 ({percentage}%)
+                              {voteCount} 票 ({percentage}%)
                             </span>
                             <div className="w-4 h-4 rounded-full border-2 border-primary/30 flex items-center justify-center">
                               <div className="w-2 h-2 rounded-full bg-primary/50"></div>
@@ -142,7 +149,7 @@ export function PollCard({ poll, onVote, hasVoted = false, isAuthenticated = fal
                         <span className="font-medium">{option.text}</span>
                         <div className="flex items-center gap-2">
                           <span className={`text-sm transition-all duration-200 ${isFlashing ? 'text-yellow-600 font-bold' : 'text-muted-foreground'}`}>
-                            {option.vote_count} 票
+                            {voteCount} 票
                           </span>
                           <Badge variant="outline" className={isFlashing ? 'bg-yellow-100 border-yellow-400 text-yellow-700' : ''}>{percentage}%</Badge>
                         </div>

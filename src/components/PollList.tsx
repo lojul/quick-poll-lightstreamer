@@ -10,9 +10,10 @@ interface PollListProps {
   isAuthenticated?: boolean;
   flashingOptions?: Set<string>;
   expiredCount?: number;
+  optimisticVoteCounts?: Map<string, number>;
 }
 
-export function PollList({ polls, onVote, votedPolls, isAuthenticated = false, flashingOptions = new Set(), expiredCount = 0 }: PollListProps) {
+export function PollList({ polls, onVote, votedPolls, isAuthenticated = false, flashingOptions = new Set(), expiredCount = 0, optimisticVoteCounts = new Map() }: PollListProps) {
   if (polls.length === 0) {
     return (
       <div className="text-center py-12">
@@ -39,6 +40,7 @@ export function PollList({ polls, onVote, votedPolls, isAuthenticated = false, f
             hasVoted={votedPolls.has(poll.id)}
             isAuthenticated={isAuthenticated}
             flashingOptions={flashingOptions}
+            optimisticVoteCounts={optimisticVoteCounts}
           />
         ))}
       </div>

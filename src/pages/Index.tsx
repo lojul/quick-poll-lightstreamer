@@ -312,6 +312,9 @@ const Index = () => {
   // Track optimistic flashes for the voter (immediate feedback)
   const [optimisticFlash, setOptimisticFlash] = useState<Set<string>>(new Set());
 
+  // Track optimistic vote counts (instant +1 before server confirms)
+  const [optimisticVoteCounts, setOptimisticVoteCounts] = useState<Map<string, number>>(new Map());
+
   const handleVote = async (pollId: string, optionId: string) => {
     // Require login to vote
     if (!isAuthenticated) {
@@ -346,6 +349,21 @@ const Index = () => {
       });
     }, 600); // Same as FLASH_DURATION_MS
 
+    // IMMEDIATE optimistic vote count - show +1 instantly
+    setOptimisticVoteCounts(prev => {
+      const next = new Map(prev);
+      next.set(optionId, (prev.get(optionId) || 0) + 1);
+      return next;
+    });
+    // Clear after 2 seconds (Lightstreamer should have confirmed by then)
+    setTimeout(() => {
+      setOptimisticVoteCounts(prev => {
+        const next = new Map(prev);
+        next.delete(optionId);
+        return next;
+      });
+    }, 2000);
+
     // Check credits
     if (!hasEnoughForVote) {
       // Rollback optimistic updates
@@ -356,6 +374,11 @@ const Index = () => {
       });
       setOptimisticFlash(prev => {
         const next = new Set(prev);
+        next.delete(optionId);
+        return next;
+      });
+      setOptimisticVoteCounts(prev => {
+        const next = new Map(prev);
         next.delete(optionId);
         return next;
       });
@@ -401,10 +424,15 @@ const Index = () => {
       });
     } catch (error) {
       console.error('[Vote] Error:', error);
-      // Rollback optimistic update on error
+      // Rollback optimistic updates on error
       setVotedPolls(prev => {
         const next = new Set(prev);
         next.delete(pollId);
+        return next;
+      });
+      setOptimisticVoteCounts(prev => {
+        const next = new Map(prev);
+        next.delete(optionId);
         return next;
       });
       toast({
@@ -608,6 +636,7 @@ const Index = () => {
               isAuthenticated={isAuthenticated}
               flashingOptions={combinedFlashingOptions}
               expiredCount={expiredCount}
+              optimisticVoteCounts={optimisticVoteCounts}
             />
           )}
         </div>
