@@ -2,6 +2,21 @@
 
 All notable changes to 貓爪達人投票社 (CatPawVote) are documented here.
 
+## [1.4.0] - 2026-03-01
+
+### Added
+- **Optimistic vote counts** - Vote numbers update instantly on click (same pace as flash effect)
+- **Forgot password flow** - New `/reset-password` page with KeyRound icon in auth modal
+
+### Fixed
+- **Android text layout** - Poll questions now wrap properly on narrow screens (was displaying vertically)
+- **Payment history flash** - Fixed "尚無付款記錄" empty state flashing before data loads
+- **Real-time sorting disabled** - Polls no longer move during session (less confusing UX)
+
+### Changed
+- PollCard layout now stacks vertically on mobile, horizontal on desktop
+- Auth modal includes "忘記密碼" tab
+
 ## [1.3.0] - 2026-02-28
 
 ### Added
