@@ -8,15 +8,17 @@
 - [ ] **CDN for static assets** - Use Cloudflare or similar for faster global delivery
 
 ### 2. User Experience
-- [ ] **Share poll link** - Add copy-to-clipboard button for sharing specific polls
+- [x] ~~**Share poll link**~~ - ✅ Done (v1.4.0)
 - [ ] **Poll search** - Search by question text or creator
-- [ ] **My polls page** - Users can view/manage polls they created
-- [ ] **Delete own polls** - Allow creators to delete their polls (before votes or with confirmation)
+- [x] ~~**My polls page**~~ - ✅ Done (v1.4.0)
+- [x] ~~**Delete own polls**~~ - ✅ Done (v1.4.0)
 
 ### 3. Security
-- [ ] **Rate limiting** - Prevent spam poll creation and rapid voting attempts
-- [ ] **CAPTCHA** - Add on signup to prevent bot accounts
+- [ ] **Login rate limiting** - Prevent brute force password attacks (5 attempts per minute)
+- [ ] **CAPTCHA on signup** - Prevent bot account creation
 - [ ] **Email verification required** - Enforce before voting (currently optional)
+
+> **Note:** Rate limiting for voting/polls NOT needed - the credit system (貓爪幣) naturally prevents spam since each action costs credits.
 
 ## Priority: Medium
 
@@ -53,12 +55,30 @@
 - [ ] **Error boundary** - Graceful error handling with retry
 - [ ] **Sentry integration** - Error monitoring in production
 
-## Completed (v1.4.0)
-- [x] Optimistic vote counts
+## Completed
+
+### v1.4.0 (2026-03-01)
+- [x] Optimistic vote counts (instant UI feedback)
 - [x] Forgot password flow
 - [x] Android text layout fix
 - [x] Payment history loading fix
+- [x] Share poll link (copy to clipboard)
+- [x] My Polls page (`/my-polls`)
+- [x] Delete own polls with confirmation
+
+### v1.3.0 (2026-02-28)
+- [x] Real-time sorting with Lightstreamer
+- [x] Tiered sorting algorithm
+- [x] Expired polls page
+- [x] Deadline support
+
+### v1.2.0 (2026-02-27)
+- [x] Credit system (貓爪幣)
+- [x] Stripe payments (HKD)
+- [x] WeChat Pay & Alipay
+- [x] Payment history
 
 ## Notes
 - Lightstreamer is already optimized for 500-1000 concurrent users
+- Credit system acts as natural rate limiter for paid actions
 - Consider load testing before major launch (see `docs/performance-test-plan.md`)
