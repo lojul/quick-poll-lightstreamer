@@ -308,6 +308,9 @@ const Index = () => {
     }
   };
 
+  // Track optimistic flashes for the voter (immediate feedback)
+  const [optimisticFlash, setOptimisticFlash] = useState<Set<string>>(new Set());
+
   const handleVote = async (pollId: string, optionId: string) => {
     // Require login to vote
     if (!isAuthenticated) {
@@ -332,12 +335,27 @@ const Index = () => {
     // IMMEDIATELY mark as voted to prevent double-clicks (optimistic update)
     setVotedPolls(prev => new Set([...prev, pollId]));
 
+    // IMMEDIATE optimistic flash - voter sees feedback instantly
+    setOptimisticFlash(prev => new Set([...prev, optionId]));
+    setTimeout(() => {
+      setOptimisticFlash(prev => {
+        const next = new Set(prev);
+        next.delete(optionId);
+        return next;
+      });
+    }, 600); // Same as FLASH_DURATION_MS
+
     // Check credits
     if (!hasEnoughForVote) {
-      // Rollback optimistic update
+      // Rollback optimistic updates
       setVotedPolls(prev => {
         const next = new Set(prev);
         next.delete(pollId);
+        return next;
+      });
+      setOptimisticFlash(prev => {
+        const next = new Set(prev);
+        next.delete(optionId);
         return next;
       });
       setInsufficientCreditsState({
@@ -349,19 +367,17 @@ const Index = () => {
     }
 
     try {
-      // Record the vote with voter_id
-      // Database has unique constraint on (poll_id, voter_id) to prevent duplicates
-      const { error: voteError } = await supabase
-        .from('votes')
-        .insert({
-          poll_id: pollId,
-          option_id: optionId,
-          voter_id: user!.id,
+      // Single atomic RPC call: insert vote + increment count
+      const { data: newCount, error: rpcError } = await supabase
+        .rpc('cast_vote', {
+          p_poll_id: pollId,
+          p_option_id: optionId,
+          p_voter_id: user!.id,
         });
 
-      if (voteError) {
+      if (rpcError) {
         // Check if it's a duplicate vote error
-        if (voteError.code === '23505') {
+        if (rpcError.code === '23505') {
           toast({
             title: "已經投過票了",
             description: "每個投票只能投一次。",
@@ -369,32 +385,15 @@ const Index = () => {
           });
           return; // Keep votedPolls updated since vote already exists
         }
-        throw voteError;
+        throw rpcError;
       }
 
-      // Deduct credits
-      const deducted = await deductForVote(pollId);
-      if (!deducted) {
-        console.warn('Failed to deduct credits for vote, but vote was recorded');
-      }
+      // Deduct credits (async, don't block)
+      deductForVote(pollId).catch(err => {
+        console.warn('Failed to deduct credits for vote:', err);
+      });
 
-      // Increment vote count directly
-      const { data: option } = await supabase
-        .from('poll_options')
-        .select('vote_count')
-        .eq('id', optionId)
-        .single();
-
-      const newVoteCount = (option?.vote_count || 0) + 1;
-
-      const { error: updateError } = await supabase
-        .from('poll_options')
-        .update({ vote_count: newVoteCount })
-        .eq('id', optionId);
-
-      if (updateError) throw updateError;
-
-      // Vote successful - already marked in votedPolls at the start
+      // Vote successful
       toast({
         title: "投票已記錄！",
         description: `感謝您參與投票。已扣除 ${VOTE_COST} 貓爪幣。`,
@@ -414,6 +413,11 @@ const Index = () => {
       });
     }
   };
+
+  // Merge optimistic flash with Lightstreamer flash
+  const combinedFlashingOptions = useMemo(() => {
+    return new Set([...flashingOptions, ...optimisticFlash]);
+  }, [flashingOptions, optimisticFlash]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
@@ -600,7 +604,7 @@ const Index = () => {
               onVote={handleVote}
               votedPolls={votedPolls}
               isAuthenticated={isAuthenticated}
-              flashingOptions={flashingOptions}
+              flashingOptions={combinedFlashingOptions}
               expiredCount={expiredCount}
             />
           )}

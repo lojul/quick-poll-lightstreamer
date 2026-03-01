@@ -231,10 +231,10 @@ function startVisitorCleanup() {
 /**
  * Poll Supabase for vote count changes
  * This is the PRIMARY mechanism for detecting changes (no Supabase Realtime dependency)
- * Polls every 500ms for all subscribed options
+ * Polls every 250ms for all subscribed options (reduced from 500ms for faster updates)
  */
 let pollInterval = null;
-const POLL_INTERVAL_MS = 500;
+const POLL_INTERVAL_MS = 250;
 
 function startPolling() {
   if (pollInterval) return;

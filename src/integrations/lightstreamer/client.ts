@@ -143,12 +143,28 @@ export function getConnectionStatus(): ConnectionStatus {
 }
 
 /**
+ * Generate UUID with fallback for older browsers (Android WebView, etc.)
+ */
+function generateUUID(): string {
+  // Use crypto.randomUUID() if available (modern browsers)
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  // Fallback for older browsers (Android 9 and below, older WebViews)
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+/**
  * Create a subscription for concurrent visitor count
  * Uses a unique visitor ID so each browser is counted separately
  */
 export function createVisitorSubscription(): { visitorSub: Subscription; countSub: Subscription; visitorId: string } {
-  // Generate unique visitor ID
-  const visitorId = `visitor_${crypto.randomUUID()}`;
+  // Generate unique visitor ID (with fallback for older Android)
+  const visitorId = `visitor_${generateUUID()}`;
 
   // Subscribe to unique visitor item (for tracking this visitor)
   const visitorSub = new Subscription("MERGE", [visitorId], ["ping"]);
