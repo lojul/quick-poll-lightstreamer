@@ -21,7 +21,7 @@ interface Payment {
 }
 
 const PaymentHistory = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,6 +29,11 @@ const PaymentHistory = () => {
 
   useEffect(() => {
     const fetchPayments = async () => {
+      // Wait for auth to finish loading
+      if (authLoading) {
+        return;
+      }
+
       if (!isAuthenticated) {
         setLoading(false);
         return;
@@ -69,7 +74,7 @@ const PaymentHistory = () => {
     };
 
     fetchPayments();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, authLoading]);
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp * 1000).toLocaleDateString('zh-TW', {
@@ -186,7 +191,7 @@ const PaymentHistory = () => {
         </div>
 
         {/* Content */}
-        {loading ? (
+        {loading || authLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
