@@ -2,6 +2,8 @@
 
 Apply these templates at: https://supabase.com/dashboard/project/shblpehddhzjvhmqhxkz/auth/templates
 
+**IMPORTANT**: These templates use solid colors (not gradients) for maximum email client compatibility.
+
 ---
 
 ## 1. Confirm Signup (確認註冊)
@@ -23,13 +25,13 @@ Apply these templates at: https://supabase.com/dashboard/project/shblpehddhzjvhm
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
     <tr>
       <td align="center">
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 500px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 500px; background-color: #ffffff; border-radius: 16px; overflow: hidden;">
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%); padding: 30px; text-align: center;">
+            <td style="background-color: #9333ea; padding: 30px; text-align: center;">
               <div style="font-size: 40px; margin-bottom: 10px;">🐾</div>
               <h1 style="color: #ffffff; margin: 0; font-size: 24px;">貓爪達人投票社</h1>
-              <p style="color: rgba(255,255,255,0.8); margin: 5px 0 0 0; font-size: 14px;">CatPawVote</p>
+              <p style="color: #e9d5ff; margin: 5px 0 0 0; font-size: 14px;">CatPawVote</p>
             </td>
           </tr>
           <!-- Content -->
@@ -42,7 +44,7 @@ Apply these templates at: https://supabase.com/dashboard/project/shblpehddhzjvhm
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center">
-                    <a href="{{ .ConfirmationURL }}" style="display: inline-block; background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%); color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                    <a href="{{ .ConfirmationURL }}" style="display: inline-block; background-color: #9333ea; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
                       驗證電子郵件
                     </a>
                   </td>
@@ -92,13 +94,13 @@ Apply these templates at: https://supabase.com/dashboard/project/shblpehddhzjvhm
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
     <tr>
       <td align="center">
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 500px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 500px; background-color: #ffffff; border-radius: 16px; overflow: hidden;">
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%); padding: 30px; text-align: center;">
+            <td style="background-color: #9333ea; padding: 30px; text-align: center;">
               <div style="font-size: 40px; margin-bottom: 10px;">🐾</div>
               <h1 style="color: #ffffff; margin: 0; font-size: 24px;">貓爪達人投票社</h1>
-              <p style="color: rgba(255,255,255,0.8); margin: 5px 0 0 0; font-size: 14px;">CatPawVote</p>
+              <p style="color: #e9d5ff; margin: 5px 0 0 0; font-size: 14px;">CatPawVote</p>
             </td>
           </tr>
           <!-- Content -->
@@ -111,7 +113,7 @@ Apply these templates at: https://supabase.com/dashboard/project/shblpehddhzjvhm
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center">
-                    <a href="{{ .ConfirmationURL }}" style="display: inline-block; background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%); color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                    <a href="{{ .ConfirmationURL }}" style="display: inline-block; background-color: #9333ea; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
                       登入帳戶
                     </a>
                   </td>
@@ -161,13 +163,13 @@ Apply these templates at: https://supabase.com/dashboard/project/shblpehddhzjvhm
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
     <tr>
       <td align="center">
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 500px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 500px; background-color: #ffffff; border-radius: 16px; overflow: hidden;">
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%); padding: 30px; text-align: center;">
+            <td style="background-color: #9333ea; padding: 30px; text-align: center;">
               <div style="font-size: 40px; margin-bottom: 10px;">🐾</div>
               <h1 style="color: #ffffff; margin: 0; font-size: 24px;">貓爪達人投票社</h1>
-              <p style="color: rgba(255,255,255,0.8); margin: 5px 0 0 0; font-size: 14px;">CatPawVote</p>
+              <p style="color: #e9d5ff; margin: 5px 0 0 0; font-size: 14px;">CatPawVote</p>
             </td>
           </tr>
           <!-- Content -->
@@ -180,7 +182,7 @@ Apply these templates at: https://supabase.com/dashboard/project/shblpehddhzjvhm
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center">
-                    <a href="{{ .ConfirmationURL }}" style="display: inline-block; background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%); color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                    <a href="{{ .ConfirmationURL }}" style="display: inline-block; background-color: #9333ea; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
                       確認更改
                     </a>
                   </td>
@@ -230,13 +232,13 @@ Apply these templates at: https://supabase.com/dashboard/project/shblpehddhzjvhm
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
     <tr>
       <td align="center">
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 500px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 500px; background-color: #ffffff; border-radius: 16px; overflow: hidden;">
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%); padding: 30px; text-align: center;">
+            <td style="background-color: #9333ea; padding: 30px; text-align: center;">
               <div style="font-size: 40px; margin-bottom: 10px;">🐾</div>
               <h1 style="color: #ffffff; margin: 0; font-size: 24px;">貓爪達人投票社</h1>
-              <p style="color: rgba(255,255,255,0.8); margin: 5px 0 0 0; font-size: 14px;">CatPawVote</p>
+              <p style="color: #e9d5ff; margin: 5px 0 0 0; font-size: 14px;">CatPawVote</p>
             </td>
           </tr>
           <!-- Content -->
@@ -249,7 +251,7 @@ Apply these templates at: https://supabase.com/dashboard/project/shblpehddhzjvhm
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center">
-                    <a href="{{ .ConfirmationURL }}" style="display: inline-block; background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%); color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                    <a href="{{ .ConfirmationURL }}" style="display: inline-block; background-color: #9333ea; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
                       重設密碼
                     </a>
                   </td>
@@ -292,8 +294,12 @@ Apply these templates at: https://supabase.com/dashboard/project/shblpehddhzjvhm
 
 ## Design Notes
 
-- **Theme Color**: Purple (#9333ea → #7c3aed gradient)
+- **Theme Color**: Solid purple (#9333ea) - no gradients for compatibility
 - **Logo**: Cat paw emoji 🐾
 - **Brand**: 貓爪達人投票社 / CatPawVote
 - **Mobile**: Responsive table-based layout
 - **Font**: System fonts for best compatibility
+
+## Why No Gradients?
+
+Many email clients (Gmail, Outlook, Yahoo) don't support CSS `linear-gradient`. Using solid `background-color` ensures the button is visible everywhere.
