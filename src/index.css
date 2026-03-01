@@ -111,7 +111,26 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  /* Prevent horizontal overflow on mobile (fixes Android zoom-out issue) */
+  html, body {
+    @apply overflow-x-hidden;
+    max-width: 100vw;
+  }
+
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Ensure dialogs are always visible on mobile */
+  [data-radix-dialog-overlay] {
+    position: fixed !important;
+    inset: 0 !important;
+  }
+
+  [data-radix-dialog-content] {
+    position: fixed !important;
+    max-height: calc(100vh - 2rem) !important;
+    max-height: calc(100dvh - 2rem) !important;
+    overflow-y: auto !important;
   }
 }
