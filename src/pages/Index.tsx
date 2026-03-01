@@ -396,10 +396,12 @@ const Index = () => {
     }, 600); // Same as FLASH_DURATION_MS
 
     // IMMEDIATE optimistic vote count - increment instantly
-    // Find current vote count for this option
-    const currentPoll = polls.find(p => p.id === pollId);
+    // Find current vote count for this option (use basePolls to avoid circular dep)
+    const currentPoll = basePolls.find(p => p.id === pollId);
     const currentOption = currentPoll?.poll_options.find(o => o.id === optionId);
-    const currentCount = currentOption?.vote_count || 0;
+    // Get count from Lightstreamer if available, otherwise from base
+    const lsCount = voteUpdates.get(optionId);
+    const currentCount = lsCount ?? currentOption?.vote_count ?? 0;
 
     setOptimisticVotes(prev => {
       const next = new Map(prev);
