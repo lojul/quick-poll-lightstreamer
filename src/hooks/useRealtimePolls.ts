@@ -156,12 +156,12 @@ export const useRealtimePolls = () => {
 
       if (pollsError) throw pollsError;
 
-      // Apply tiered sorting algorithm
+      // Apply tiered sorting algorithm on initial load
       const sortedPolls = sortPollsTiered(pollsData || []);
       pollsRef.current = sortedPolls;
       setPolls(sortedPolls);
-      setTotalVotes(calculateTotalVotes(pollsArray));
-      console.log('[Supabase] Loaded', pollsArray.length, 'polls');
+      setTotalVotes(calculateTotalVotes(sortedPolls));
+      console.log('[Supabase] Loaded', sortedPolls.length, 'polls');
       setConnectedStatus();
     } catch (error) {
       console.error('[Supabase] Error loading polls:', error);

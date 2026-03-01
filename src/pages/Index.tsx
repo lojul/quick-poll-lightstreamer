@@ -10,11 +10,12 @@ import { useToast } from '@/hooks/use-toast';
 import { useRealtimePolls, getAllOptionIds, mergeVoteUpdates, sortPollsTiered } from '@/hooks/useRealtimePolls';
 
 // ============================================
-// REAL-TIME SORTING CONFIG (easy to rollback)
+// REAL-TIME SORTING CONFIG
 // Set to false to disable real-time re-sorting
+// Polls are sorted on page load only, not during session
 // ============================================
-const ENABLE_REALTIME_SORTING = true;
-const SORT_DEBOUNCE_MS = 2000; // Re-sort every 2 seconds
+const ENABLE_REALTIME_SORTING = false; // Disabled: polls don't move after voting
+const SORT_DEBOUNCE_MS = 2000; // Not used when ENABLE_REALTIME_SORTING is false
 import { useLightstreamerVotes } from '@/hooks/useLightstreamerVotes';
 import { useLightstreamerVisitors } from '@/hooks/useLightstreamerVisitors';
 import { RealtimeIndicator } from '@/components/RealtimeIndicator';
