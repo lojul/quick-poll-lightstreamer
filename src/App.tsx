@@ -10,6 +10,7 @@ import Terms from "./pages/Terms";
 import PaymentResult from "./pages/PaymentResult";
 import PaymentHistory from "./pages/PaymentHistory";
 import ExpiredPolls from "./pages/ExpiredPolls";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/payment" element={<PaymentResult />} />
             <Route path="/payment-history" element={<PaymentHistory />} />
             <Route path="/expired" element={<ExpiredPolls />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

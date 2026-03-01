@@ -56,6 +56,13 @@ export function useAuth() {
     return { error };
   };
 
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    return { error };
+  };
+
   // Check if email is verified
   const isEmailVerified = user?.email_confirmed_at !== null && user?.email_confirmed_at !== undefined;
 
@@ -67,6 +74,7 @@ export function useAuth() {
     signIn,
     signOut,
     resendVerificationEmail,
+    resetPassword,
     isAuthenticated: !!user,
     isEmailVerified,
   };

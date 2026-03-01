@@ -43,7 +43,7 @@ const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Auth hook
-  const { user, isAuthenticated, signUp, signIn, signOut, resendVerificationEmail } = useAuth();
+  const { user, isAuthenticated, signUp, signIn, signOut, resendVerificationEmail, resetPassword } = useAuth();
 
   // Credits hook
   const {
@@ -429,6 +429,7 @@ const Index = () => {
         onSignUp={signUp}
         onSignIn={signIn}
         onResendVerification={resendVerificationEmail}
+        onResetPassword={resetPassword}
       />
 
       {/* Top Up Modal */}
