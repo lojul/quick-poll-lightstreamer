@@ -13,6 +13,7 @@ import ExpiredPolls from "./pages/ExpiredPolls";
 import ResetPassword from "./pages/ResetPassword";
 import MyPolls from "./pages/MyPolls";
 import PollPage from "./pages/PollPage";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/my-polls" element={<MyPolls />} />
             <Route path="/poll/:id" element={<PollPage />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

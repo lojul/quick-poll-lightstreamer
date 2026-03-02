@@ -86,6 +86,10 @@ const ExpiredPolls = () => {
               服務條款
             </Link>
             <span>|</span>
+            <Link to="/privacy" className="hover:text-primary transition-colors">
+              私隱政策
+            </Link>
+            <span>|</span>
             <span>© 2026 CatPawVote</span>
           </div>
         </footer>
