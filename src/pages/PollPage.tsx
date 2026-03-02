@@ -47,8 +47,6 @@ const PollPage = () => {
     isEnabled: lightstreamerEnabled,
     setOptionIds,
     lastUpdate,
-    confirmedOptionIds,
-    clearConfirmedOptionIds,
   } = useLightstreamerVotes();
 
   // Fetch the specific poll
@@ -138,21 +136,7 @@ const PollPage = () => {
 
   // Optimistic updates
   const [optimisticFlash, setOptimisticFlash] = useState<Set<string>>(new Set());
-  const [optimisticVoteCounts, setOptimisticVoteCounts] = useState<Map<string, number>>(new Map());
-
-  // Clear optimistic counts when Lightstreamer confirms the vote
-  useEffect(() => {
-    if (confirmedOptionIds.size > 0) {
-      setOptimisticVoteCounts(prev => {
-        const next = new Map(prev);
-        confirmedOptionIds.forEach(optionId => {
-          next.delete(optionId);
-        });
-        return next;
-      });
-      clearConfirmedOptionIds();
-    }
-  }, [confirmedOptionIds, clearConfirmedOptionIds]);
+  const [optimisticVoteCounts, setOptimisticVoteCounts] = useState<Map<string, { increment: number; baseCount: number }>>(new Map());
 
   const combinedFlashingOptions = useMemo(() => {
     return new Set([...flashingOptions, ...optimisticFlash]);
@@ -188,18 +172,23 @@ const PollPage = () => {
       });
     }, 600);
 
+    // Find current vote count to use as base
+    const option = mergedPoll?.poll_options.find(o => o.id === optionId);
+    const baseCount = option?.vote_count ?? 0;
+
     setOptimisticVoteCounts(prev => {
       const next = new Map(prev);
-      next.set(optionId, (prev.get(optionId) || 0) + 1);
+      next.set(optionId, { increment: 1, baseCount });
       return next;
     });
+    // Clear after 5 seconds (fallback)
     setTimeout(() => {
       setOptimisticVoteCounts(prev => {
         const next = new Map(prev);
         next.delete(optionId);
         return next;
       });
-    }, 2000);
+    }, 5000);
 
     if (!hasEnoughForVote) {
       // Rollback

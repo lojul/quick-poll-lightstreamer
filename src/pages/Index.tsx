@@ -118,8 +118,6 @@ const Index = () => {
     isEnabled: lightstreamerEnabled,
     setOptionIds,
     lastUpdate,
-    confirmedOptionIds,
-    clearConfirmedOptionIds,
   } = useLightstreamerVotes();
 
   // Use Lightstreamer for concurrent visitor tracking
@@ -314,22 +312,8 @@ const Index = () => {
   // Track optimistic flashes for the voter (immediate feedback)
   const [optimisticFlash, setOptimisticFlash] = useState<Set<string>>(new Set());
 
-  // Track optimistic vote counts (instant +1 before server confirms)
-  const [optimisticVoteCounts, setOptimisticVoteCounts] = useState<Map<string, number>>(new Map());
-
-  // Clear optimistic counts when Lightstreamer confirms the vote
-  useEffect(() => {
-    if (confirmedOptionIds.size > 0) {
-      setOptimisticVoteCounts(prev => {
-        const next = new Map(prev);
-        confirmedOptionIds.forEach(optionId => {
-          next.delete(optionId);
-        });
-        return next;
-      });
-      clearConfirmedOptionIds();
-    }
-  }, [confirmedOptionIds, clearConfirmedOptionIds]);
+  // Track optimistic vote counts with base count (to detect when Lightstreamer has confirmed)
+  const [optimisticVoteCounts, setOptimisticVoteCounts] = useState<Map<string, { increment: number; baseCount: number }>>(new Map());
 
   const handleVote = async (pollId: string, optionId: string) => {
     // Require login to vote
@@ -366,19 +350,24 @@ const Index = () => {
     }, 600); // Same as FLASH_DURATION_MS
 
     // IMMEDIATE optimistic vote count - show +1 instantly
+    // Find current vote count to use as base (so we know when Lightstreamer confirms)
+    const poll = polls.find(p => p.id === pollId);
+    const option = poll?.poll_options.find(o => o.id === optionId);
+    const baseCount = option?.vote_count ?? 0;
+
     setOptimisticVoteCounts(prev => {
       const next = new Map(prev);
-      next.set(optionId, (prev.get(optionId) || 0) + 1);
+      next.set(optionId, { increment: 1, baseCount });
       return next;
     });
-    // Clear after 2 seconds (Lightstreamer should have confirmed by then)
+    // Clear after 5 seconds (fallback if Lightstreamer is slow)
     setTimeout(() => {
       setOptimisticVoteCounts(prev => {
         const next = new Map(prev);
         next.delete(optionId);
         return next;
       });
-    }, 2000);
+    }, 5000);
 
     // Check credits
     if (!hasEnoughForVote) {

@@ -9,13 +9,18 @@ import { BarChart3, List, Clock, AlertCircle, Coins, Share2, Check } from 'lucid
 import { useState } from 'react';
 import { VOTE_COST } from '@/hooks/useCredits';
 
+interface OptimisticVote {
+  increment: number;
+  baseCount: number;
+}
+
 interface PollCardProps {
   poll: Poll;
   onVote: (pollId: string, optionId: string) => void;
   hasVoted?: boolean;
   isAuthenticated?: boolean;
   flashingOptions?: Set<string>;
-  optimisticVoteCounts?: Map<string, number>;
+  optimisticVoteCounts?: Map<string, OptimisticVote>;
 }
 
 export function PollCard({ poll, onVote, hasVoted = false, isAuthenticated = false, flashingOptions = new Set(), optimisticVoteCounts = new Map() }: PollCardProps) {
@@ -54,8 +59,13 @@ export function PollCard({ poll, onVote, hasVoted = false, isAuthenticated = fal
   };
 
   // Helper to get vote count with optimistic increment
+  // Only add optimistic +1 if current count still equals base count (Lightstreamer hasn't confirmed yet)
   const getVoteCount = (option: { id: string; vote_count: number }) => {
-    return option.vote_count + (optimisticVoteCounts.get(option.id) || 0);
+    const optimistic = optimisticVoteCounts.get(option.id);
+    if (optimistic && option.vote_count === optimistic.baseCount) {
+      return option.vote_count + optimistic.increment;
+    }
+    return option.vote_count;
   };
 
   const totalVotes = poll.poll_options.reduce((sum, option) => sum + getVoteCount(option), 0);
