@@ -23,7 +23,7 @@ export function PollCard({ poll, onVote, hasVoted = false, isAuthenticated = fal
   const [copied, setCopied] = useState(false);
 
   const handleShare = async () => {
-    const url = `${window.location.origin}/?poll=${poll.id}`;
+    const url = `${window.location.origin}/poll/${poll.id}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
