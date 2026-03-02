@@ -86,23 +86,7 @@ const MyPolls = () => {
   const handleDelete = async (pollId: string) => {
     setDeletingId(pollId);
     try {
-      // Delete poll options first (due to foreign key)
-      const { error: optionsError } = await supabase
-        .from('poll_options')
-        .delete()
-        .eq('poll_id', pollId);
-
-      if (optionsError) throw optionsError;
-
-      // Delete votes
-      const { error: votesError } = await supabase
-        .from('votes')
-        .delete()
-        .eq('poll_id', pollId);
-
-      if (votesError) throw votesError;
-
-      // Delete poll
+      // Delete poll - CASCADE will automatically delete poll_options and votes
       const { error: pollError } = await supabase
         .from('polls')
         .delete()
