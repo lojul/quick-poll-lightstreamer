@@ -578,7 +578,7 @@ const Index = () => {
                     size="sm"
                     className="text-muted-foreground hover:text-primary"
                   >
-                    我的投票
+                    我建立的投票
                   </Button>
                 </Link>
                 <Link to="/payment-history">

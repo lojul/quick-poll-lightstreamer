@@ -166,7 +166,7 @@ const MyPolls = () => {
               </Button>
             </Link>
             <div>
-              <h1 className="text-2xl font-bold">我的投票</h1>
+              <h1 className="text-2xl font-bold">我建立的投票</h1>
               <p className="text-muted-foreground text-sm">{user?.email}</p>
             </div>
           </div>
