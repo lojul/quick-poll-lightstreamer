@@ -7,9 +7,15 @@ interface PollChartProps {
 
 export function PollChart({ options }: PollChartProps) {
   const totalVotes = options.reduce((sum, option) => sum + option.vote_count, 0);
-  
+
+  // Truncate labels for display, keep full text for tooltip
+  const truncateLabel = (text: string, maxLen: number) => {
+    if (text.length <= maxLen) return text;
+    return text.substring(0, maxLen - 1) + '…';
+  };
+
   const chartData = options.map((option, index) => ({
-    name: option.text.length > 20 ? `${option.text.substring(0, 20)}...` : option.text,
+    name: truncateLabel(option.text, 15),
     fullName: option.text,
     votes: option.vote_count,
     percentage: totalVotes > 0 ? Math.round((option.vote_count / totalVotes) * 100) : 0,
@@ -29,8 +35,8 @@ export function PollChart({ options }: PollChartProps) {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-background border border-border rounded-lg p-3 shadow-lg">
-          <p className="font-medium">{data.fullName}</p>
+        <div className="bg-background border border-border rounded-lg p-3 shadow-lg max-w-xs">
+          <p className="font-medium break-words">{data.fullName}</p>
           <p className="text-primary">{data.votes} 票 ({data.percentage}%)</p>
         </div>
       );
@@ -46,21 +52,26 @@ export function PollChart({ options }: PollChartProps) {
     );
   }
 
+  // Dynamic height based on number of options (min 150px, 40px per option)
+  const chartHeight = Math.max(150, options.length * 40);
+
   return (
-    <div className="w-full h-48">
+    <div className="w-full" style={{ height: chartHeight }}>
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-          <XAxis 
-            dataKey="name" 
+        <BarChart
+          data={chartData}
+          layout="vertical"
+          margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+        >
+          <XAxis type="number" tick={{ fontSize: 12 }} />
+          <YAxis
+            type="category"
+            dataKey="name"
             tick={{ fontSize: 12 }}
-            interval={0}
-            angle={-45}
-            textAnchor="end"
-            height={60}
+            width={100}
           />
-          <YAxis tick={{ fontSize: 12 }} />
           <Tooltip content={<CustomTooltip />} />
-          <Bar dataKey="votes" radius={[4, 4, 0, 0]}>
+          <Bar dataKey="votes" radius={[0, 4, 4, 0]}>
             {chartData.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
             ))}
