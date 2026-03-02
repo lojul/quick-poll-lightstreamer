@@ -149,9 +149,16 @@ const PrivacyPolicy = () => {
           </section>
 
           <div className="border-t pt-8 mt-8">
-            <p className="text-sm text-muted-foreground text-center">
+            <p className="text-sm text-muted-foreground text-center mb-4">
               使用本服務即表示您同意本私隱政策。
             </p>
+            <div className="flex justify-center gap-4 text-sm text-muted-foreground">
+              <Link to="/terms" className="hover:text-primary transition-colors">
+                服務條款
+              </Link>
+              <span>|</span>
+              <span>© 2026 CatPawVote</span>
+            </div>
           </div>
         </div>
       </div>
