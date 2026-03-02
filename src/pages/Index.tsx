@@ -117,7 +117,9 @@ const Index = () => {
     connectionStatus: lightstreamerStatus,
     isEnabled: lightstreamerEnabled,
     setOptionIds,
-    lastUpdate
+    lastUpdate,
+    confirmedOptionIds,
+    clearConfirmedOptionIds,
   } = useLightstreamerVotes();
 
   // Use Lightstreamer for concurrent visitor tracking
@@ -314,6 +316,20 @@ const Index = () => {
 
   // Track optimistic vote counts (instant +1 before server confirms)
   const [optimisticVoteCounts, setOptimisticVoteCounts] = useState<Map<string, number>>(new Map());
+
+  // Clear optimistic counts when Lightstreamer confirms the vote
+  useEffect(() => {
+    if (confirmedOptionIds.size > 0) {
+      setOptimisticVoteCounts(prev => {
+        const next = new Map(prev);
+        confirmedOptionIds.forEach(optionId => {
+          next.delete(optionId);
+        });
+        return next;
+      });
+      clearConfirmedOptionIds();
+    }
+  }, [confirmedOptionIds, clearConfirmedOptionIds]);
 
   const handleVote = async (pollId: string, optionId: string) => {
     // Require login to vote

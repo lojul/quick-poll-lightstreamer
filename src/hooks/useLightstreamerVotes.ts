@@ -31,6 +31,10 @@ export interface UseLightstreamerVotesReturn {
   setOptionIds: (ids: string[]) => void;
   /** Last time a vote update was received */
   lastUpdate: Date;
+  /** Set of option IDs that received updates (for clearing optimistic counts) */
+  confirmedOptionIds: Set<string>;
+  /** Clear confirmed option IDs after processing */
+  clearConfirmedOptionIds: () => void;
 }
 
 /**
@@ -48,10 +52,15 @@ export function useLightstreamerVotes(): UseLightstreamerVotesReturn {
   );
   const [optionIds, setOptionIds] = useState<string[]>([]);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [confirmedOptionIds, setConfirmedOptionIds] = useState<Set<string>>(new Set());
 
   const subscriptionRef = useRef<Subscription | null>(null);
   const isConnectedRef = useRef(false);
   const flashTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+
+  const clearConfirmedOptionIds = useCallback(() => {
+    setConfirmedOptionIds(new Set());
+  }, []);
 
   // Map internal status to hook status
   const mapStatus = useCallback((status: ConnectionStatus): LightstreamerConnectionStatus => {
@@ -131,6 +140,9 @@ export function useLightstreamerVotes(): UseLightstreamerVotesReturn {
 
             // Only flash on real updates (not initial load)
             if (isRealUpdate) {
+              // Mark this option as confirmed (for clearing optimistic counts)
+              setConfirmedOptionIds((prev) => new Set([...prev, optionId]));
+
               // Clear any existing timeout for this option
               const existingTimeout = flashTimeoutsRef.current.get(optionId);
               if (existingTimeout) {
@@ -190,5 +202,7 @@ export function useLightstreamerVotes(): UseLightstreamerVotesReturn {
     isEnabled: isLightstreamerEnabled(),
     setOptionIds,
     lastUpdate,
+    confirmedOptionIds,
+    clearConfirmedOptionIds,
   };
 }
