@@ -84,6 +84,21 @@ serve(async (req) => {
 
     let stripeCustomerId = profile?.stripe_customer_id;
 
+    // Verify existing customer exists in Stripe (handles test/live mode switch)
+    if (stripeCustomerId) {
+      try {
+        await stripe.customers.retrieve(stripeCustomerId);
+      } catch (err: any) {
+        if (err?.code === 'resource_missing' || err?.statusCode === 404) {
+          // Customer doesn't exist (likely from different mode), clear it
+          console.log(`Customer ${stripeCustomerId} not found, creating new one`);
+          stripeCustomerId = null;
+        } else {
+          throw err;
+        }
+      }
+    }
+
     if (!stripeCustomerId) {
       // Create Stripe customer
       const customer = await stripe.customers.create({
