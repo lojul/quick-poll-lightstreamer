@@ -40,8 +40,8 @@ const voteCounts = new Map(); // optionId -> vote_count
 // Track concurrent visitors with timestamps for timeout cleanup
 const visitorItems = new Map(); // itemName -> { lastSeen: timestamp }
 const VISITOR_COUNT_ITEM = "visitors_count";
-const VISITOR_TIMEOUT_MS = 3600000; // 3600 seconds (1 hour) timeout
-const VISITOR_CLEANUP_INTERVAL_MS = 15000; // Check every 15 seconds
+const VISITOR_TIMEOUT_MS = 120000; // 2 minutes timeout (for closed tabs)
+const VISITOR_CLEANUP_INTERVAL_MS = 10000; // Check every 10 seconds
 
 // Data provider instance
 let dataProvider = null;

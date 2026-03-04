@@ -158,13 +158,33 @@ function generateUUID(): string {
   });
 }
 
+const VISITOR_ID_KEY = 'catpawvote_visitor_id';
+
+/**
+ * Get or create a persistent visitor ID for this browser tab
+ * Uses sessionStorage so same tab keeps same ID across refreshes
+ * New tabs get new IDs
+ */
+function getOrCreateVisitorId(): string {
+  // Check sessionStorage first (persists across refresh, but not new tabs)
+  let visitorId = sessionStorage.getItem(VISITOR_ID_KEY);
+
+  if (!visitorId) {
+    visitorId = `visitor_${generateUUID()}`;
+    sessionStorage.setItem(VISITOR_ID_KEY, visitorId);
+  }
+
+  return visitorId;
+}
+
 /**
  * Create a subscription for concurrent visitor count
- * Uses a unique visitor ID so each browser is counted separately
+ * Uses a unique visitor ID so each browser tab is counted separately
+ * Same tab refreshing reuses the same ID to avoid double-counting
  */
 export function createVisitorSubscription(): { visitorSub: Subscription; countSub: Subscription; visitorId: string } {
-  // Generate unique visitor ID (with fallback for older Android)
-  const visitorId = `visitor_${generateUUID()}`;
+  // Get or create visitor ID (persisted in sessionStorage)
+  const visitorId = getOrCreateVisitorId();
 
   // Subscribe to unique visitor item (for tracking this visitor)
   const visitorSub = new Subscription("MERGE", [visitorId], ["ping"]);
