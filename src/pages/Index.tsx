@@ -121,7 +121,7 @@ const Index = () => {
   } = useLightstreamerVotes();
 
   // Use Lightstreamer for concurrent visitor tracking
-  const { visitorCount, isEnabled: visitorTrackingEnabled } = useLightstreamerVisitors();
+  const { visitorCount, isConnected: visitorConnected } = useLightstreamerVisitors();
 
   // Update Lightstreamer subscription when polls change
   useEffect(() => {
@@ -528,11 +528,11 @@ const Index = () => {
               </span>
             </div>
 
-            {/* Concurrent visitors - always show for debugging */}
+            {/* Concurrent visitors */}
             <div className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20">
               <Users className="w-4 h-4 mr-2 text-blue-600" />
               <span className="text-sm font-medium text-blue-600">
-                {visitorCount} 人在線
+                {visitorCount === null ? '連線中...' : `${visitorCount} 人在線`}
               </span>
             </div>
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   getLightstreamerClient,
   createVisitorSubscription,
@@ -10,60 +10,59 @@ import {
 } from "@/integrations/lightstreamer/client";
 
 export interface UseLightstreamerVisitorsReturn {
-  /** Current number of concurrent visitors */
-  visitorCount: number;
+  /** Current number of concurrent visitors, null if not connected yet */
+  visitorCount: number | null;
   /** Whether Lightstreamer is enabled */
   isEnabled: boolean;
+  /** Whether currently connected */
+  isConnected: boolean;
 }
 
 /**
  * React hook for tracking concurrent visitors via Lightstreamer
  * Uses unique visitor IDs so each browser is counted separately
  *
- * @returns Visitor count and enabled status
+ * @returns Visitor count, enabled status, and connection status
  */
 export function useLightstreamerVisitors(): UseLightstreamerVisitorsReturn {
-  const [visitorCount, setVisitorCount] = useState(0);
+  const [visitorCount, setVisitorCount] = useState<number | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const visitorSubRef = useRef<Subscription | null>(null);
   const countSubRef = useRef<Subscription | null>(null);
-  const hasSubscribed = useRef(false);
+  const visitorIdRef = useRef<string | null>(null);
 
-  // Poll for connection status (client is connected by useLightstreamerVotes)
-  useEffect(() => {
-    if (!isLightstreamerEnabled()) {
-      return;
+  // Cleanup function to unsubscribe
+  const cleanup = useCallback(() => {
+    if (visitorSubRef.current) {
+      try {
+        unsubscribe(visitorSubRef.current);
+      } catch (e) {
+        // Ignore cleanup errors
+      }
+      visitorSubRef.current = null;
     }
-
-    // Check initial status
-    const initialStatus = getConnectionStatus();
-    if (initialStatus === "CONNECTED") {
-      setIsConnected(true);
+    if (countSubRef.current) {
+      try {
+        unsubscribe(countSubRef.current);
+      } catch (e) {
+        // Ignore cleanup errors
+      }
+      countSubRef.current = null;
     }
-
-    // Poll for connection status changes
-    const interval = setInterval(() => {
-      const status = getConnectionStatus();
-      setIsConnected(status === "CONNECTED");
-    }, 500);
-
-    return () => clearInterval(interval);
   }, []);
 
-  // Subscribe only after connected
-  useEffect(() => {
-    if (!isLightstreamerEnabled() || !isConnected || hasSubscribed.current) {
-      return;
-    }
-
+  // Subscribe function
+  const doSubscribe = useCallback(() => {
     const client = getLightstreamerClient();
     if (!client) return;
 
-    hasSubscribed.current = true;
+    // Clean up any existing subscriptions first
+    cleanup();
 
     // Create subscriptions for visitor tracking
     console.log("[Visitors] Creating subscriptions...");
     const { visitorSub, countSub, visitorId } = createVisitorSubscription();
+    visitorIdRef.current = visitorId;
 
     // Listen for count updates
     countSub.addListener({
@@ -101,23 +100,54 @@ export function useLightstreamerVisitors(): UseLightstreamerVisitorsReturn {
     subscribe(countSub);
     visitorSubRef.current = visitorSub;
     countSubRef.current = countSub;
+  }, [cleanup]);
+
+  // Poll for connection status and handle reconnection
+  useEffect(() => {
+    if (!isLightstreamerEnabled()) {
+      return;
+    }
+
+    let wasConnected = false;
+
+    // Check status and subscribe/resubscribe as needed
+    const checkConnection = () => {
+      const status = getConnectionStatus();
+      const nowConnected = status === "CONNECTED";
+
+      // Connection state changed
+      if (nowConnected !== wasConnected) {
+        setIsConnected(nowConnected);
+
+        if (nowConnected && !wasConnected) {
+          // Just connected - subscribe
+          console.log("[Visitors] Connection established, subscribing...");
+          doSubscribe();
+        } else if (!nowConnected && wasConnected) {
+          // Just disconnected - reset count to null (loading state)
+          console.log("[Visitors] Connection lost");
+          setVisitorCount(null);
+        }
+
+        wasConnected = nowConnected;
+      }
+    };
+
+    // Check immediately
+    checkConnection();
+
+    // Poll for connection status changes
+    const interval = setInterval(checkConnection, 500);
 
     return () => {
-      console.log("[Visitors] Unsubscribing...");
-      if (visitorSubRef.current) {
-        unsubscribe(visitorSubRef.current);
-        visitorSubRef.current = null;
-      }
-      if (countSubRef.current) {
-        unsubscribe(countSubRef.current);
-        countSubRef.current = null;
-      }
-      hasSubscribed.current = false;
+      clearInterval(interval);
+      cleanup();
     };
-  }, [isConnected]);
+  }, [doSubscribe, cleanup]);
 
   return {
     visitorCount,
     isEnabled: isLightstreamerEnabled(),
+    isConnected,
   };
 }
