@@ -5,9 +5,10 @@ import { Poll } from '@/types/poll';
 import { PollChart } from './PollChart';
 import { formatDistanceToNow, isPast } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
-import { BarChart3, List, Clock, AlertCircle, Coins, Share2, Check } from 'lucide-react';
+import { BarChart3, List, Clock, AlertCircle, Coins } from 'lucide-react';
 import { useState } from 'react';
 import { VOTE_COST } from '@/hooks/useCredits';
+import { ShareMenu } from './ShareMenu';
 
 interface OptimisticVote {
   increment: number;
@@ -25,26 +26,6 @@ interface PollCardProps {
 
 export function PollCard({ poll, onVote, hasVoted = false, isAuthenticated = false, flashingOptions = new Set(), optimisticVoteCounts = new Map() }: PollCardProps) {
   const [viewMode, setViewMode] = useState<'list' | 'chart'>('list');
-  const [copied, setCopied] = useState(false);
-
-  const handleShare = async () => {
-    const url = `${window.location.origin}/poll/${poll.id}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Fallback for older browsers
-      const input = document.createElement('input');
-      input.value = url;
-      document.body.appendChild(input);
-      input.select();
-      document.execCommand('copy');
-      document.body.removeChild(input);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
 
   // Handle case where deadline doesn't exist yet (before migration)
   const hasDeadline = !!poll.deadline;
@@ -203,24 +184,7 @@ export function PollCard({ poll, onVote, hasVoted = false, isAuthenticated = fal
         <div className="flex justify-between items-center text-sm text-muted-foreground pt-2 border-t border-poll-card-border">
           <div className="flex items-center gap-2">
             <span>建立於 {formatDistanceToNow(new Date(poll.created_at), { addSuffix: true })}</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleShare}
-              className="h-7 px-2 text-muted-foreground hover:text-primary"
-            >
-              {copied ? (
-                <>
-                  <Check className="w-3.5 h-3.5 mr-1 text-green-500" />
-                  <span className="text-green-500 text-xs">已複製</span>
-                </>
-              ) : (
-                <>
-                  <Share2 className="w-3.5 h-3.5 mr-1" />
-                  <span className="text-xs">分享</span>
-                </>
-              )}
-            </Button>
+            <ShareMenu pollId={poll.id} pollTitle={poll.question} />
           </div>
           <div className="flex items-center gap-2">
             {isAuthenticated && canVote && (

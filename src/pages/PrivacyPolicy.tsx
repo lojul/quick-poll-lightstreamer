@@ -157,6 +157,10 @@ const PrivacyPolicy = () => {
                 服務條款
               </Link>
               <span>|</span>
+              <Link to="/refund" className="hover:text-primary transition-colors">
+                退款政策
+              </Link>
+              <span>|</span>
               <span>© 2026 CatPawVote</span>
             </div>
           </div>

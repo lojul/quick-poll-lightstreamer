@@ -14,6 +14,7 @@ import ResetPassword from "./pages/ResetPassword";
 import MyPolls from "./pages/MyPolls";
 import PollPage from "./pages/PollPage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import RefundPolicy from "./pages/RefundPolicy";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/my-polls" element={<MyPolls />} />
             <Route path="/poll/:id" element={<PollPage />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/refund" element={<RefundPolicy />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

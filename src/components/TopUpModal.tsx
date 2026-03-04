@@ -82,9 +82,10 @@ export function TopUpModal({ open, onOpenChange }: TopUpModalProps) {
         throw new Error(data.error + (data.details ? `: ${data.details}` : ''));
       }
 
-      // Redirect to Stripe Checkout
+      // Open Stripe Checkout in new tab (so user can close and return)
       if (data?.url) {
-        window.location.href = data.url;
+        window.open(data.url, '_blank');
+        onOpenChange(false); // Close the modal
       } else {
         console.error('[TopUp] No URL in response:', data);
         throw new Error('No checkout URL returned');
