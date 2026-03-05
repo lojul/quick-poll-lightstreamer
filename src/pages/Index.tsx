@@ -4,7 +4,7 @@ import { CreatePoll } from '@/components/CreatePoll';
 import { PollList } from '@/components/PollList';
 import { Button } from '@/components/ui/button';
 import { CreatePollData, Poll } from '@/types/poll';
-import { PlusCircle, Vote, LogIn, LogOut, User, Users, Archive } from 'lucide-react';
+import { PlusCircle, Vote, LogIn, LogOut, User, Users, Archive, Clock, TrendingUp } from 'lucide-react';
 import { isPast } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useRealtimePolls, getAllOptionIds, mergeVoteUpdates, sortPollsTiered } from '@/hooks/useRealtimePolls';
@@ -30,10 +30,13 @@ import { supabase } from '@/integrations/supabase/client';
 // No longer need localStorage - database is the source of truth for registered users
 // Guests see all polls as "not yet voted" until they login
 
+type SortMode = 'trending' | 'latest';
+
 const Index = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showTopUpModal, setShowTopUpModal] = useState(false);
+  const [sortMode, setSortMode] = useState<SortMode>('trending');
   const [insufficientCreditsState, setInsufficientCreditsState] = useState<{
     open: boolean;
     action: 'poll' | 'vote';
@@ -221,8 +224,15 @@ const Index = () => {
       }
     }
 
+    // Apply sort mode
+    if (sortMode === 'latest') {
+      // Sort by created_at DESC (newest first)
+      active.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    }
+    // 'trending' uses the default tiered sorting from useRealtimePolls
+
     return { activePolls: active, expiredCount: expired };
-  }, [sortedPolls, allPolls]);
+  }, [sortedPolls, allPolls, sortMode]);
 
   // Calculate total votes from merged polls
   const displayTotalVotes = useMemo(() => {
@@ -635,6 +645,30 @@ const Index = () => {
               hasEnoughCredits={hasEnoughForPoll}
               credits={credits}
             />
+          )}
+
+          {/* Sort Toggle */}
+          {!loading && polls.length > 0 && (
+            <div className="flex justify-center gap-2 mb-6">
+              <Button
+                variant={sortMode === 'trending' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSortMode('trending')}
+                className={sortMode === 'trending' ? 'bg-primary' : ''}
+              >
+                <TrendingUp className="w-4 h-4 mr-1" />
+                熱門
+              </Button>
+              <Button
+                variant={sortMode === 'latest' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSortMode('latest')}
+                className={sortMode === 'latest' ? 'bg-primary' : ''}
+              >
+                <Clock className="w-4 h-4 mr-1" />
+                最新
+              </Button>
+            </div>
           )}
 
           {loading ? (
