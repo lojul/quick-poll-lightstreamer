@@ -56,6 +56,12 @@ export function useLightstreamerVisitors(): UseLightstreamerVisitorsReturn {
     const client = getLightstreamerClient();
     if (!client) return;
 
+    // Prevent double subscription (e.g., React Strict Mode)
+    if (visitorSubRef.current) {
+      console.log("[Visitors] Already subscribed, skipping...");
+      return;
+    }
+
     // Clean up any existing subscriptions first
     cleanup();
 
@@ -109,6 +115,38 @@ export function useLightstreamerVisitors(): UseLightstreamerVisitorsReturn {
     }
 
     let wasConnected = false;
+    let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+
+    // Heartbeat: periodically re-subscribe to keep visitor alive on server
+    const startHeartbeat = () => {
+      if (heartbeatInterval) return;
+      heartbeatInterval = setInterval(() => {
+        if (getConnectionStatus() === "CONNECTED" && visitorSubRef.current) {
+          console.log("[Visitors] Heartbeat - refreshing subscription");
+          // Clear ref to allow re-subscription
+          const oldVisitorSub = visitorSubRef.current;
+          const oldCountSub = countSubRef.current;
+          visitorSubRef.current = null;
+          countSubRef.current = null;
+          // Unsubscribe old
+          try {
+            if (oldVisitorSub) unsubscribe(oldVisitorSub);
+            if (oldCountSub) unsubscribe(oldCountSub);
+          } catch (e) {
+            // Ignore
+          }
+          // Re-subscribe
+          doSubscribe();
+        }
+      }, 60000); // Heartbeat every 60 seconds (well under 2-minute timeout)
+    };
+
+    const stopHeartbeat = () => {
+      if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+        heartbeatInterval = null;
+      }
+    };
 
     // Check status and subscribe/resubscribe as needed
     const checkConnection = () => {
@@ -123,10 +161,12 @@ export function useLightstreamerVisitors(): UseLightstreamerVisitorsReturn {
           // Just connected - subscribe
           console.log("[Visitors] Connection established, subscribing...");
           doSubscribe();
+          startHeartbeat();
         } else if (!nowConnected && wasConnected) {
           // Just disconnected - reset count to null (loading state)
           console.log("[Visitors] Connection lost");
           setVisitorCount(null);
+          stopHeartbeat();
         }
 
         wasConnected = nowConnected;
@@ -141,6 +181,7 @@ export function useLightstreamerVisitors(): UseLightstreamerVisitorsReturn {
 
     return () => {
       clearInterval(interval);
+      stopHeartbeat();
       cleanup();
     };
   }, [doSubscribe, cleanup]);

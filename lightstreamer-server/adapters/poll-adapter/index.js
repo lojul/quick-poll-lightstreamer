@@ -40,7 +40,7 @@ const voteCounts = new Map(); // optionId -> vote_count
 // Track concurrent visitors with timestamps for timeout cleanup
 const visitorItems = new Map(); // itemName -> { lastSeen: timestamp }
 const VISITOR_COUNT_ITEM = "visitors_count";
-const VISITOR_TIMEOUT_MS = 600000; // 10 minutes timeout (for orphaned connections)
+const VISITOR_TIMEOUT_MS = 120000; // 2 minutes timeout (for orphaned connections)
 const VISITOR_CLEANUP_INTERVAL_MS = 30000; // Check every 30 seconds
 
 // Data provider instance
@@ -211,26 +211,19 @@ function startVisitorCleanup() {
     let removed = 0;
 
     for (const [itemName, data] of visitorItems.entries()) {
-      // Check if subscription is still active - if so, don't remove
-      const subscription = subscribedItems.get(itemName);
-      if (subscription && subscription.isActive) {
-        // Still active, update lastSeen to keep them alive
-        data.lastSeen = now;
-        continue;
-      }
-
-      // Subscription not active AND timed out - remove
+      // Remove any visitor that has timed out
+      // Note: dropped connections won't send unsubscribe, so we can't rely on isActive
       if (now - data.lastSeen > VISITOR_TIMEOUT_MS) {
         visitorItems.delete(itemName);
         subscribedItems.delete(itemName);
         removed++;
-        console.log(`[Cleanup] Removed stale visitor: ${itemName}`);
+        console.log(`[Cleanup] Removed timed-out visitor: ${itemName}`);
       }
     }
 
     if (removed > 0) {
       broadcastVisitorCount();
-      console.log(`[Cleanup] Removed ${removed} stale visitors. Total: ${visitorItems.size}`);
+      console.log(`[Cleanup] Removed ${removed} timed-out visitors. Total: ${visitorItems.size}`);
     }
   }, VISITOR_CLEANUP_INTERVAL_MS);
 
