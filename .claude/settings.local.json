@@ -45,7 +45,8 @@
       "Bash(supabase functions deploy:*)",
       "WebFetch(domain:docs.stripe.com)",
       "WebFetch(domain:supabase.com)",
-      "WebFetch(domain:quick-poll.up.railway.app)"
+      "WebFetch(domain:quick-poll.up.railway.app)",
+      "Bash(git log:*)"
     ]
   }
 }
