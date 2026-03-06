@@ -7,15 +7,22 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Credit packages configuration (prices in HKD cents)
-// Note: Stripe minimum for HKD is $4.00
+// Credit packages configuration (prices in cents)
 const CREDIT_PACKAGES = {
-  small: { credits: 100, price_cents: 400, name: '100 閃幣' },      // HK$4
-  medium: { credits: 500, price_cents: 1800, name: '500 閃幣' },    // HK$18
-  large: { credits: 1200, price_cents: 3800, name: '1200 閃幣 (20% 額外)' }, // HK$38
+  hkd: {
+    small: { credits: 100, price_cents: 400, name: '100 貓爪幣' },      // HK$4
+    medium: { credits: 500, price_cents: 1800, name: '500 貓爪幣' },    // HK$18
+    large: { credits: 1200, price_cents: 3800, name: '1200 貓爪幣 (20% 額外)' }, // HK$38
+  },
+  cny: {
+    small: { credits: 100, price_cents: 400, name: '100 貓爪幣' },      // ¥4
+    medium: { credits: 500, price_cents: 1600, name: '500 貓爪幣' },    // ¥16
+    large: { credits: 1200, price_cents: 3500, name: '1200 貓爪幣 (20% 額外)' }, // ¥35
+  },
 } as const;
 
-type PackageType = keyof typeof CREDIT_PACKAGES;
+type Currency = 'hkd' | 'cny';
+type PackageType = keyof typeof CREDIT_PACKAGES.hkd;
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -64,16 +71,20 @@ serve(async (req) => {
     }
 
     // Parse request body
-    const { packageType } = await req.json() as { packageType: PackageType };
+    const { packageType, currency = 'hkd' } = await req.json() as { packageType: PackageType; currency?: Currency };
 
-    if (!packageType || !CREDIT_PACKAGES[packageType]) {
+    // Validate currency
+    const validCurrency = currency === 'cny' ? 'cny' : 'hkd';
+    const packages = CREDIT_PACKAGES[validCurrency];
+
+    if (!packageType || !packages[packageType]) {
       return new Response(
         JSON.stringify({ error: 'Invalid package type' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const selectedPackage = CREDIT_PACKAGES[packageType];
+    const selectedPackage = packages[packageType];
 
     // Get or create Stripe customer
     const { data: profile } = await supabase
@@ -134,14 +145,14 @@ serve(async (req) => {
     }
 
     // Create Stripe Checkout session
-    // HKD is supported by Alipay and WeChat Pay
+    // Both HKD and CNY are supported by Alipay and WeChat Pay
     const session = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,
       payment_method_types: ['card', 'alipay', 'wechat_pay'],
       line_items: [
         {
           price_data: {
-            currency: 'hkd',
+            currency: validCurrency,
             product_data: {
               name: selectedPackage.name,
               description: `購買 ${selectedPackage.credits} 閃幣`,
@@ -159,6 +170,7 @@ serve(async (req) => {
         payment_id: payment.id,
         credits: selectedPackage.credits.toString(),
         package_type: packageType,
+        currency: validCurrency,
       },
       // Pass metadata to the PaymentIntent so it shows in payment history
       payment_intent_data: {
