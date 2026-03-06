@@ -46,7 +46,8 @@
       "WebFetch(domain:docs.stripe.com)",
       "WebFetch(domain:supabase.com)",
       "WebFetch(domain:quick-poll.up.railway.app)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(git revert:*)"
     ]
   }
 }

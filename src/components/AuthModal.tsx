@@ -1,11 +1,68 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Mail, RefreshCw, KeyRound } from 'lucide-react';
+import { Loader2, Mail, RefreshCw, KeyRound, Check, X } from 'lucide-react';
+
+// Password requirements
+const PASSWORD_RULES = [
+  { key: 'length', label: '至少 8 個字元', test: (p: string) => p.length >= 8 },
+  { key: 'uppercase', label: '至少 1 個大寫字母', test: (p: string) => /[A-Z]/.test(p) },
+  { key: 'lowercase', label: '至少 1 個小寫字母', test: (p: string) => /[a-z]/.test(p) },
+  { key: 'number', label: '至少 1 個數字', test: (p: string) => /[0-9]/.test(p) },
+  { key: 'special', label: '至少 1 個特殊符號 (!@#$%^&*)', test: (p: string) => /[!@#$%^&*(),.?":{}|<>]/.test(p) },
+];
+
+function PasswordStrength({ password }: { password: string }) {
+  const results = PASSWORD_RULES.map(rule => ({
+    ...rule,
+    passed: rule.test(password),
+  }));
+
+  const passedCount = results.filter(r => r.passed).length;
+  const allPassed = passedCount === results.length;
+
+  return (
+    <div className="mt-2 space-y-1">
+      <div className="flex gap-1 mb-2">
+        {results.map((_, i) => (
+          <div
+            key={i}
+            className={`h-1 flex-1 rounded-full transition-colors ${
+              i < passedCount
+                ? passedCount === results.length
+                  ? 'bg-green-500'
+                  : passedCount >= 3
+                  ? 'bg-yellow-500'
+                  : 'bg-red-500'
+                : 'bg-gray-200'
+            }`}
+          />
+        ))}
+      </div>
+      <div className="text-xs space-y-0.5">
+        {results.map(rule => (
+          <div key={rule.key} className={`flex items-center gap-1 ${rule.passed ? 'text-green-600' : 'text-muted-foreground'}`}>
+            {rule.passed ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+            {rule.label}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function validatePassword(password: string): { valid: boolean; message: string } {
+  for (const rule of PASSWORD_RULES) {
+    if (!rule.test(password)) {
+      return { valid: false, message: `密碼需要${rule.label}` };
+    }
+  }
+  return { valid: true, message: '' };
+}
 
 interface AuthModalProps {
   open: boolean;
@@ -109,8 +166,9 @@ export function AuthModal({ open, onOpenChange, onSignUp, onSignIn, onResendVeri
       return;
     }
 
-    if (password.length < 6) {
-      toast({ title: '錯誤', description: '密碼至少需要 6 個字元', variant: 'destructive' });
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      toast({ title: '密碼強度不足', description: passwordValidation.message, variant: 'destructive' });
       return;
     }
 
@@ -201,11 +259,12 @@ export function AuthModal({ open, onOpenChange, onSignUp, onSignIn, onResendVeri
                 <Input
                   id="signup-password"
                   type="password"
-                  placeholder="至少 6 個字元"
+                  placeholder="輸入強密碼"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}
                 />
+                {password && <PasswordStrength password={password} />}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="signup-confirm">確認密碼</Label>
