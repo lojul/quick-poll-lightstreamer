@@ -18,71 +18,37 @@ interface TopUpModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-type Currency = 'hkd' | 'cny';
-
-const PACKAGES = {
-  hkd: [
-    {
-      id: 'small',
-      credits: 100,
-      price: 'HK$4',
-      priceCents: 400,
-      label: '入門方案',
-      popular: false,
-    },
-    {
-      id: 'medium',
-      credits: 500,
-      price: 'HK$18',
-      priceCents: 1800,
-      label: '標準方案',
-      popular: true,
-    },
-    {
-      id: 'large',
-      credits: 1200,
-      price: 'HK$38',
-      priceCents: 3800,
-      label: '超值方案',
-      bonus: '+20%',
-      popular: false,
-    },
-  ],
-  cny: [
-    {
-      id: 'small',
-      credits: 100,
-      price: '¥4',
-      priceCents: 400,
-      label: '入門方案',
-      popular: false,
-    },
-    {
-      id: 'medium',
-      credits: 500,
-      price: '¥16',
-      priceCents: 1600,
-      label: '標準方案',
-      popular: true,
-    },
-    {
-      id: 'large',
-      credits: 1200,
-      price: '¥35',
-      priceCents: 3500,
-      label: '超值方案',
-      bonus: '+20%',
-      popular: false,
-    },
-  ],
-} as const;
+const PACKAGES = [
+  {
+    id: 'small',
+    credits: 100,
+    price: 'HK$4',
+    priceCents: 400,
+    label: '入門方案',
+    popular: false,
+  },
+  {
+    id: 'medium',
+    credits: 500,
+    price: 'HK$18',
+    priceCents: 1800,
+    label: '標準方案',
+    popular: true,
+  },
+  {
+    id: 'large',
+    credits: 1200,
+    price: 'HK$38',
+    priceCents: 3800,
+    label: '超值方案',
+    bonus: '+20%',
+    popular: false,
+  },
+] as const;
 
 export function TopUpModal({ open, onOpenChange }: TopUpModalProps) {
   const [loading, setLoading] = useState<string | null>(null);
-  const [currency, setCurrency] = useState<Currency>('hkd');
   const { toast } = useToast();
-
-  const packages = PACKAGES[currency];
 
   const handlePurchase = async (packageId: string) => {
     try {
@@ -104,7 +70,7 @@ export function TopUpModal({ open, onOpenChange }: TopUpModalProps) {
             'Authorization': `Bearer ${session.access_token}`,
             'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
-          body: JSON.stringify({ packageType: packageId, currency }),
+          body: JSON.stringify({ packageType: packageId }),
         }
       );
 
@@ -149,25 +115,8 @@ export function TopUpModal({ open, onOpenChange }: TopUpModalProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex justify-center gap-2 mt-4">
-          <Button
-            variant={currency === 'hkd' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setCurrency('hkd')}
-          >
-            🇭🇰 HKD
-          </Button>
-          <Button
-            variant={currency === 'cny' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setCurrency('cny')}
-          >
-            🇨🇳 CNY
-          </Button>
-        </div>
-
         <div className="space-y-3 mt-4">
-          {packages.map((pkg) => (
+          {PACKAGES.map((pkg) => (
             <Card
               key={pkg.id}
               className={`p-4 cursor-pointer hover:border-primary/50 transition-all ${
