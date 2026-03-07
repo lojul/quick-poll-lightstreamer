@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CatPawVote</string>
+    <string name="title_activity_main">CatPawVote</string>
+    <string name="package_name">com.catpawvote.app</string>
+    <string name="custom_url_scheme">com.catpawvote.app</string>
+</resources>
